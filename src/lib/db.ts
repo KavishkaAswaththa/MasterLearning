@@ -169,6 +169,36 @@ export async function deleteUserFromRegistry(email: string): Promise<boolean> {
   return true;
 }
 
+// 4.5. UPDATE USER IN REGISTRY
+export async function updateUserInRegistry(email: string, name: string, role: string): Promise<boolean> {
+  const normEmail = email.toLowerCase().trim();
+
+  // A. Try Firestore
+  try {
+    const userDocRef = doc(db, "users", normEmail);
+    await setDoc(userDocRef, { name, role }, { merge: true });
+    console.log("User successfully updated in Firestore");
+  } catch (err) {
+    console.warn("Firestore update failed, falling back to localStorage:", err);
+  }
+
+  // B. Fallback to localStorage
+  if (typeof window !== "undefined") {
+    const stored = localStorage.getItem("registered_users");
+    if (stored) {
+      const list: UserProfile[] = JSON.parse(stored);
+      const updated = list.map(u => {
+        if (u.email.toLowerCase() === normEmail) {
+          return { ...u, name, role };
+        }
+        return u;
+      });
+      localStorage.setItem("registered_users", JSON.stringify(updated));
+    }
+  }
+  return true;
+}
+
 // 5. SUBMIT QUIZ RESULT
 export async function submitQuizResult(submission: QuizSubmission): Promise<boolean> {
   // A. Try Firestore

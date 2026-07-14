@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import styles from "./page.module.css";
-import { getUsersRegistry, deleteUserFromRegistry, getRecentSubmissions, QuizSubmission } from "@/lib/db";
+import { getUsersRegistry, getRecentSubmissions, QuizSubmission } from "@/lib/db";
 import Sidebar from "@/components/Sidebar";
 import ProfileSummary from "@/components/ProfileSummary";
 import CourseCard, { CourseData } from "@/components/CourseCard";
@@ -13,12 +13,11 @@ import {
   ClipboardList, 
   Database,
   PlusCircle,
-  Clock,
   TrendingUp
 } from "lucide-react";
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState("dashboard");
+
   const [filter, setFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   
@@ -26,6 +25,8 @@ export default function Dashboard() {
   const [user, setUser] = useState<{ email: string; role: string; name: string } | null>(null);
   const [registeredUsers, setRegisteredUsers] = useState<{ name: string; email: string; role: string }[]>([]);
   const [submissions, setSubmissions] = useState<QuizSubmission[]>([]);
+
+
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -46,12 +47,7 @@ export default function Dashboard() {
     });
   }, []);
 
-  // Admin: Delete registered user
-  const handleDeleteUser = async (emailToDelete: string) => {
-    await deleteUserFromRegistry(emailToDelete);
-    const updated = registeredUsers.filter(u => u.email !== emailToDelete);
-    setRegisteredUsers(updated);
-  };
+
 
   const mockCourses: CourseData[] = [
     {
@@ -133,6 +129,23 @@ export default function Dashboard() {
     return true;
   });
 
+  // Admin unified accounts lists
+  const seedUsers = [
+    { name: "Administrator", email: "admin@masterlearning.com", role: "admin", status: "Protected" },
+    { name: "Professor Davis", email: "teacher@masterlearning.com", role: "teacher", status: "Protected" },
+    { name: "Kavishka Aswaththa", email: "student@masterlearning.com", role: "student", status: "Protected" }
+  ];
+
+  const allUsersList = [
+    ...seedUsers,
+    ...registeredUsers.map(u => ({ ...u, status: "Dynamic" }))
+  ];
+
+
+
+  const studentsCount = allUsersList.filter(u => u.role === "student").length;
+  const teachersCount = allUsersList.filter(u => u.role === "teacher").length;
+
   // Render Loading state
   if (!user) {
     return (
@@ -148,7 +161,7 @@ export default function Dashboard() {
       <div className="glow-purple" style={{ top: "10%", left: "20%" }}></div>
       <div className="glow-orange" style={{ bottom: "10%", right: "10%" }}></div>
 
-      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
+      <Sidebar activeTab="dashboard" />
 
       <main className={styles.mainContent}>
         {/* Top Header Row */}
@@ -202,6 +215,45 @@ export default function Dashboard() {
                   <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
                   <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5" />
                 </svg>
+              </div>
+
+              {/* Learning Progress Analytics */}
+              <div className="glass-panel" style={{ padding: "2rem", marginBottom: "2rem", border: "1px solid var(--glass-border)" }}>
+                <h2 style={{ fontSize: "1.2rem", fontWeight: "bold", marginBottom: "1.5rem", color: "#ffffff", display: "flex", alignItems: "center", gap: "10px" }}>
+                  <TrendingUp size={20} color="var(--color-purple)" /> Weekly Study Hours
+                </h2>
+                
+                <div style={{ position: "relative", width: "100%", height: "180px", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+                  <div style={{ position: "absolute", top: "25%", left: 0, right: 0, height: "1px", background: "rgba(255,255,255,0.03)" }}></div>
+                  <div style={{ position: "absolute", top: "50%", left: 0, right: 0, height: "1px", background: "rgba(255,255,255,0.03)" }}></div>
+                  <div style={{ position: "absolute", top: "75%", left: 0, right: 0, height: "1px", background: "rgba(255,255,255,0.03)" }}></div>
+                  
+                  <svg viewBox="0 0 500 150" width="100%" height="150" style={{ overflow: "visible" }}>
+                    <defs>
+                      <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="var(--color-purple)" stopOpacity="0.3" />
+                        <stop offset="100%" stopColor="var(--color-purple)" stopOpacity="0.0" />
+                      </linearGradient>
+                    </defs>
+                    <path d="M 0 120 Q 80 40 160 80 T 320 20 T 480 60 L 480 150 L 0 150 Z" fill="url(#chartGrad)" />
+                    <path d="M 0 120 Q 80 40 160 80 T 320 20 T 480 60" fill="none" stroke="var(--color-purple)" strokeWidth="3" strokeLinecap="round" />
+                    
+                    <circle cx="80" cy="50" r="5" fill="var(--color-purple)" stroke="#ffffff" strokeWidth="2" />
+                    <circle cx="160" cy="80" r="5" fill="var(--color-purple)" stroke="#ffffff" strokeWidth="2" />
+                    <circle cx="320" cy="20" r="5" fill="var(--color-purple)" stroke="#ffffff" strokeWidth="2" />
+                    <circle cx="480" cy="60" r="5" fill="var(--color-purple)" stroke="#ffffff" strokeWidth="2" />
+                  </svg>
+                  
+                  <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0 0 0", fontSize: "0.8rem", color: "var(--text-secondary)" }}>
+                    <span>Mon</span>
+                    <span>Tue</span>
+                    <span>Wed</span>
+                    <span>Thu</span>
+                    <span>Fri</span>
+                    <span>Sat</span>
+                    <span>Sun</span>
+                  </div>
+                </div>
               </div>
 
               {/* Subject filtration controls */}
@@ -308,6 +360,28 @@ export default function Dashboard() {
                 </div>
               </div>
 
+              {/* Quiz Performance Analytics */}
+              <div className="glass-panel" style={{ padding: "2rem", marginBottom: "2rem", border: "1px solid var(--glass-border)" }}>
+                <h2 style={{ fontSize: "1.2rem", fontWeight: "bold", marginBottom: "1.5rem", color: "#ffffff", display: "flex", alignItems: "center", gap: "10px" }}>
+                  <TrendingUp size={20} color="var(--color-orange)" /> Quiz Score Distribution
+                </h2>
+
+                <div style={{ display: "flex", justifyContent: "space-around", alignItems: "flex-end", height: "180px", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                  {[
+                    { quiz: "Chemistry 101", avg: "82%", val: 82 },
+                    { quiz: "Trigonometry 202", avg: "74%", val: 74 },
+                    { quiz: "Mechanics 301", avg: "68%", val: 68 },
+                    { quiz: "Literature 404", avg: "91%", val: 91 },
+                  ].map((bar, i) => (
+                    <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "70px", gap: "10px" }}>
+                      <span style={{ fontSize: "0.8rem", fontWeight: "bold", color: "var(--color-orange)" }}>{bar.avg}</span>
+                      <div style={{ width: "24px", height: `${bar.val * 1.3}px`, background: "var(--gradient-primary)", borderRadius: "6px 6px 0 0", boxShadow: "0 0 10px rgba(249,115,22,0.15)" }}></div>
+                      <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", textAlign: "center", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", width: "100%" }} title={bar.quiz}>{bar.quiz}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* Submissions Section */}
               <div className="glass-panel" style={{ padding: "2rem", borderRadius: "24px", border: "1px solid var(--glass-border)", marginBottom: "2rem" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
@@ -404,126 +478,131 @@ export default function Dashboard() {
               {/* Admin Systems Stats */}
               <div className={styles.metricsRow} style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1.5rem", marginBottom: "2rem" }}>
                 <div className="glass-card" style={{ padding: "1.5rem", borderRadius: "18px", display: "flex", gap: "1rem", alignItems: "center", border: "1px solid var(--glass-border)" }}>
-                  <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "rgba(139, 92, 246, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-purple)" }}>
+                  <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "rgba(59, 130, 246, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#60a5fa" }}>
                     <Users size={24} />
                   </div>
                   <div>
-                    <h3 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>{registeredUsers.length + 3}</h3>
-                    <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Total Accounts</p>
+                    <h3 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>{studentsCount}</h3>
+                    <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Total Students</p>
                   </div>
                 </div>
                 
                 <div className="glass-card" style={{ padding: "1.5rem", borderRadius: "18px", display: "flex", gap: "1rem", alignItems: "center", border: "1px solid var(--glass-border)" }}>
                   <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "rgba(249, 115, 22, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-orange)" }}>
-                    <Database size={24} />
+                    <GraduationCap size={24} />
                   </div>
                   <div>
-                    <h3 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>100%</h3>
-                    <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>School Database Status</p>
+                    <h3 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>{teachersCount}</h3>
+                    <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Total Teachers</p>
                   </div>
                 </div>
 
                 <div className="glass-card" style={{ padding: "1.5rem", borderRadius: "18px", display: "flex", gap: "1rem", alignItems: "center", border: "1px solid var(--glass-border)" }}>
                   <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "rgba(139, 92, 246, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-purple)" }}>
-                    <Clock size={24} />
+                    <Database size={24} />
                   </div>
                   <div>
-                    <h3 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>Online</h3>
-                    <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Platform Status</p>
+                    <h3 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>{allUsersList.length}</h3>
+                    <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Total Accounts</p>
                   </div>
                 </div>
               </div>
 
-              {/* Accounts Directory */}
-              <div className="glass-panel" style={{ padding: "2rem", borderRadius: "24px", border: "1px solid var(--glass-border)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-                  <h2 style={{ fontSize: "1.25rem", fontWeight: "bold", color: "#ffffff" }}>User Accounts Directory</h2>
-                  <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Seed accounts are protected</span>
+              {/* Activity Analytics Graph */}
+              <div className="glass-panel" style={{ padding: "2rem", borderRadius: "24px", border: "1px solid var(--glass-border)", marginBottom: "2rem" }}>
+                <h2 style={{ fontSize: "1.25rem", fontWeight: "bold", color: "#ffffff", marginBottom: "1.5rem", display: "flex", alignItems: "center", gap: "8px" }}>
+                  <TrendingUp size={20} color="var(--color-purple)" /> Platform Engagement Trends
+                </h2>
+
+                <div style={{ position: "relative", width: "100%", height: "180px", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+                  <div style={{ position: "absolute", top: "25%", left: 0, right: 0, height: "1px", background: "rgba(255,255,255,0.03)" }}></div>
+                  <div style={{ position: "absolute", top: "50%", left: 0, right: 0, height: "1px", background: "rgba(255,255,255,0.03)" }}></div>
+                  <div style={{ position: "absolute", top: "75%", left: 0, right: 0, height: "1px", background: "rgba(255,255,255,0.03)" }}></div>
+                  
+                  <svg viewBox="0 0 500 150" width="100%" height="150" style={{ overflow: "visible" }}>
+                    <defs>
+                      <linearGradient id="adminChartGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="var(--color-orange)" stopOpacity="0.3" />
+                        <stop offset="100%" stopColor="var(--color-orange)" stopOpacity="0.0" />
+                      </linearGradient>
+                    </defs>
+                    <path d="M 0 130 Q 100 60 200 110 T 400 40 T 500 90 L 500 150 L 0 150 Z" fill="url(#adminChartGrad)" />
+                    <path d="M 0 130 Q 100 60 200 110 T 400 40 T 500 90" fill="none" stroke="var(--color-orange)" strokeWidth="3" strokeLinecap="round" />
+                    
+                    <circle cx="100" cy="78" r="5" fill="var(--color-orange)" stroke="#ffffff" strokeWidth="2" />
+                    <circle cx="200" cy="110" r="5" fill="var(--color-orange)" stroke="#ffffff" strokeWidth="2" />
+                    <circle cx="300" cy="55" r="5" fill="var(--color-orange)" stroke="#ffffff" strokeWidth="2" />
+                    <circle cx="400" cy="40" r="5" fill="var(--color-orange)" stroke="#ffffff" strokeWidth="2" />
+                  </svg>
+                  
+                  <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0 0 0", fontSize: "0.8rem", color: "var(--text-secondary)" }}>
+                    <span>Jul 09</span>
+                    <span>Jul 10</span>
+                    <span>Jul 11</span>
+                    <span>Jul 12</span>
+                    <span>Jul 13</span>
+                    <span>Jul 14</span>
+                    <span>Jul 15</span>
+                  </div>
                 </div>
+              </div>
 
-                <div style={{ overflowX: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", minWidth: "500px" }}>
-                    <thead>
-                      <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", color: "var(--text-secondary)", fontSize: "0.85rem" }}>
-                        <th style={{ padding: "10px" }}>Profile Name</th>
-                        <th style={{ padding: "10px" }}>Email</th>
-                        <th style={{ padding: "10px" }}>Role</th>
-                        <th style={{ padding: "10px" }}>Status</th>
-                        <th style={{ padding: "10px" }}>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody style={{ fontSize: "0.9rem" }}>
-                      {/* Seed Accounts */}
-                      <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                        <td style={{ padding: "12px 10px", fontWeight: "bold" }}>Administrator</td>
-                        <td style={{ padding: "12px 10px", color: "var(--text-secondary)" }}>admin@masterlearning.com</td>
-                        <td style={{ padding: "12px 10px" }}>
-                          <span style={{ background: "rgba(139, 92, 246, 0.15)", color: "#a78bfa", padding: "4px 8px", borderRadius: "6px", fontSize: "0.75rem", fontWeight: "bold" }}>
-                            Admin
-                          </span>
-                        </td>
-                        <td style={{ padding: "12px 10px", color: "#22c55e" }}>Protected</td>
-                        <td style={{ padding: "12px 10px", color: "var(--text-muted)", fontSize: "0.8rem" }}>System Default</td>
-                      </tr>
-                      <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                        <td style={{ padding: "12px 10px", fontWeight: "bold" }}>Professor Davis</td>
-                        <td style={{ padding: "12px 10px", color: "var(--text-secondary)" }}>teacher@masterlearning.com</td>
-                        <td style={{ padding: "12px 10px" }}>
-                          <span style={{ background: "rgba(249, 115, 22, 0.15)", color: "#fb923c", padding: "4px 8px", borderRadius: "6px", fontSize: "0.75rem", fontWeight: "bold" }}>
-                            Teacher
-                          </span>
-                        </td>
-                        <td style={{ padding: "12px 10px", color: "#22c55e" }}>Protected</td>
-                        <td style={{ padding: "12px 10px", color: "var(--text-muted)", fontSize: "0.8rem" }}>System Default</td>
-                      </tr>
-                      <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                        <td style={{ padding: "12px 10px", fontWeight: "bold" }}>Kavishka Aswaththa</td>
-                        <td style={{ padding: "12px 10px", color: "var(--text-secondary)" }}>student@masterlearning.com</td>
-                        <td style={{ padding: "12px 10px" }}>
-                          <span style={{ background: "rgba(59, 130, 246, 0.15)", color: "#60a5fa", padding: "4px 8px", borderRadius: "6px", fontSize: "0.75rem", fontWeight: "bold" }}>
-                            Student
-                          </span>
-                        </td>
-                        <td style={{ padding: "12px 10px", color: "#22c55e" }}>Protected</td>
-                        <td style={{ padding: "12px 10px", color: "var(--text-muted)", fontSize: "0.8rem" }}>System Default</td>
-                      </tr>
-
-                      {/* Registered Users */}
-                      {registeredUsers.map((regUser, idx) => (
-                        <tr key={idx} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                          <td style={{ padding: "12px 10px", fontWeight: "bold" }}>{regUser.name}</td>
-                          <td style={{ padding: "12px 10px", color: "var(--text-secondary)" }}>{regUser.email}</td>
-                          <td style={{ padding: "12px 10px" }}>
-                            <span style={{ 
-                              background: regUser.role === "admin" ? "rgba(139, 92, 246, 0.15)" : regUser.role === "teacher" ? "rgba(249, 115, 22, 0.15)" : "rgba(59, 130, 246, 0.15)",
-                              color: regUser.role === "admin" ? "#a78bfa" : regUser.role === "teacher" ? "#fb923c" : "#60a5fa", 
-                              padding: "4px 8px", 
-                              borderRadius: "6px", 
-                              fontSize: "0.75rem", 
-                              fontWeight: "bold" 
-                            }}>
-                              {regUser.role.toUpperCase()}
-                            </span>
-                          </td>
-                          <td style={{ padding: "12px 10px", color: "var(--color-orange)" }}>Dynamic</td>
-                          <td style={{ padding: "12px 10px" }}>
-                            <button 
-                              onClick={() => handleDeleteUser(regUser.email)}
-                              style={{ background: "none", border: "none", color: "#ef4444", fontSize: "0.85rem", fontWeight: "bold", cursor: "pointer" }}
-                            >
-                              Revoke Access
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+              {/* Activity Log Stream */}
+              <div className="glass-panel" style={{ padding: "2rem", borderRadius: "24px", border: "1px solid var(--glass-border)", marginBottom: "2rem" }}>
+                <h2 style={{ fontSize: "1.25rem", fontWeight: "bold", color: "#ffffff", marginBottom: "1.5rem" }}>Recent Platform Activity Stream</h2>
+                
+                <div style={{ display: "flex", flexDirection: "column", gap: "1.2rem" }}>
+                  {[
+                    { log: "Student Kavishka Aswaththa completed 'Grade 10 Science Quiz' (90% Score)", time: "10 minutes ago", icon: "✓", color: "#22c55e" },
+                    { log: "Professor Davis scheduled a new Pure Mathematics Live Session", time: "1 hour ago", icon: "🗓", color: "var(--color-orange)" },
+                    { log: "Professor Davis updated English Literature curriculum worksheets", time: "3 hours ago", icon: "✏️", color: "var(--color-purple)" },
+                    { log: "Student Nishadi Perera logged into the classroom workspace", time: "5 hours ago", icon: "👤", color: "#60a5fa" },
+                    { log: "School database backup saved successfully to local secure storage", time: "1 day ago", icon: "⚙️", color: "#e2e8f0" }
+                  ].map((act, i) => (
+                    <div key={i} style={{ display: "flex", gap: "1rem", alignItems: "flex-start", borderBottom: i < 4 ? "1px solid rgba(255,255,255,0.04)" : "none", paddingBottom: "0.8rem" }}>
+                      <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.9rem" }}>
+                        {act.icon}
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                        <span style={{ fontSize: "0.88rem", color: "#ffffff", fontWeight: "500" }}>{act.log}</span>
+                        <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>{act.time}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
 
             {/* Right column */}
             <div className={styles.rightColumn}>
+              {/* Account Composition */}
+              <div className={styles.sideCard} style={{ marginBottom: "2rem" }}>
+                <h3 className={styles.sideCardTitle}>Account Composition</h3>
+                <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", marginTop: "1rem" }}>
+                  <svg width="80" height="80" viewBox="0 0 36 36" style={{ transform: "rotate(-90deg)" }}>
+                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="4" />
+                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="var(--color-purple)" strokeWidth="4" strokeDasharray="10 90" strokeDashoffset="0" />
+                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="var(--color-orange)" strokeWidth="4" strokeDasharray="25 75" strokeDashoffset="-10" />
+                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="#22c55e" strokeWidth="4" strokeDasharray="65 35" strokeDashoffset="-35" />
+                  </svg>
+                  
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "0.8rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "var(--color-purple)" }}></div>
+                      <span style={{ color: "var(--text-secondary)" }}>Admins: 10%</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "var(--color-orange)" }}></div>
+                      <span style={{ color: "var(--text-secondary)" }}>Teachers: 25%</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#22c55e" }}></div>
+                      <span style={{ color: "var(--text-secondary)" }}>Students: 65%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Database Center */}
               <div className={styles.sideCard} style={{ background: "linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(249, 115, 22, 0.08) 100%)" }}>
                 <h3 className={styles.sideCardTitle} style={{ color: "#ffffff" }}>Administrator Panel</h3>
