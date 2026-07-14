@@ -23,32 +23,27 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   
   // Role session state
-  const [user] = useState<{ email: string; role: string; name: string } | null>(() => {
-    if (typeof window !== "undefined") {
-      const storedUser = localStorage.getItem("user");
-      return storedUser ? JSON.parse(storedUser) : null;
-    }
-    return null;
-  });
+  const [user, setUser] = useState<{ email: string; role: string; name: string } | null>(null);
   const [registeredUsers, setRegisteredUsers] = useState<{ name: string; email: string; role: string }[]>([]);
   const [submissions, setSubmissions] = useState<QuizSubmission[]>([]);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const storedUser = localStorage.getItem("user");
-      if (!storedUser) {
-        window.location.href = "/login?error=auth_required";
-        return;
-      }
-
-      getUsersRegistry().then((list) => {
-        setRegisteredUsers(list);
-      });
-
-      getRecentSubmissions().then((list) => {
-        setSubmissions(list);
-      });
+    const storedUser = localStorage.getItem("user");
+    if (!storedUser) {
+      window.location.href = "/login?error=auth_required";
+      return;
     }
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setUser(JSON.parse(storedUser));
+
+    getUsersRegistry().then((list) => {
+      setRegisteredUsers(list);
+    });
+
+    getRecentSubmissions().then((list) => {
+      setSubmissions(list);
+    });
   }, []);
 
   // Admin: Delete registered user

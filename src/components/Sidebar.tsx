@@ -1,14 +1,14 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import styles from "./Sidebar.module.css";
 
 interface SidebarProps {
   activeTab?: string;
-  onTabChange?: (tab: string) => void;
 }
 
-export default function Sidebar({ activeTab = "dashboard", onTabChange }: SidebarProps) {
+export default function Sidebar({ activeTab = "dashboard" }: SidebarProps) {
   const [user] = React.useState<{ name: string; role: string; email?: string } | null>(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("user");
@@ -106,15 +106,16 @@ export default function Sidebar({ activeTab = "dashboard", onTabChange }: Sideba
       <nav className={styles.navSection}>
         {menuItems.map((item) => {
           const isActive = activeTab === item.id;
+          const href = item.id === "dashboard" ? "/dashboard" : `/${item.id}`;
           return (
-            <div
+            <Link
               key={item.id}
+              href={href}
               className={`${styles.navItem} ${isActive ? styles.activeNavItem : ""}`}
-              onClick={() => onTabChange && onTabChange(item.id)}
             >
               {item.icon}
               <span className={styles.labelText}>{item.label}</span>
-            </div>
+            </Link>
           );
         })}
       </nav>
