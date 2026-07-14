@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { registerUser, getUsersRegistry } from "@/lib/db";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -46,14 +47,9 @@ export default function SignupPage() {
     setIsLoading(true);
 
     try {
-      // Simulate API call for user registration
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      const localUsersStr = localStorage.getItem("registered_users");
-      const localUsers = localUsersStr ? JSON.parse(localUsersStr) : [];
-
-      const emailLower = email.toLowerCase();
-      const userExists = localUsers.some((u) => u.email.toLowerCase() === emailLower) ||
+      const emailLower = email.toLowerCase().trim();
+      const registry = await getUsersRegistry();
+      const userExists = registry.some((u) => u.email.toLowerCase() === emailLower) ||
         emailLower === "admin@masterlearning.com" ||
         emailLower === "teacher@masterlearning.com" ||
         emailLower === "student@masterlearning.com";
@@ -62,8 +58,7 @@ export default function SignupPage() {
         throw new Error("User already exists");
       }
 
-      localUsers.push({ name, email, password, role });
-      localStorage.setItem("registered_users", JSON.stringify(localUsers));
+      await registerUser({ name, email, password, role });
       
       setSuccess("Account created successfully! Redirecting to login...");
       

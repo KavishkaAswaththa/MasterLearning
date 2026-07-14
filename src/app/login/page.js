@@ -4,11 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-const SEEDED_USERS = [
-  { email: "admin@masterlearning.com", password: "password123", role: "admin", name: "Administrator" },
-  { email: "teacher@masterlearning.com", password: "password123", role: "teacher", name: "Professor Davis" },
-  { email: "student@masterlearning.com", password: "password123", role: "student", name: "Kavishka Aswaththa" }
-];
+import { authenticateUser } from "@/lib/db";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -55,16 +51,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      // Simulate API call for auth
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      const localUsersStr = localStorage.getItem("registered_users");
-      const localUsers = localUsersStr ? JSON.parse(localUsersStr) : [];
-      const allUsers = [...SEEDED_USERS, ...localUsers];
-
-      const matchedUser = allUsers.find(
-        (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
-      );
+      const matchedUser = await authenticateUser(email, password);
 
       if (!matchedUser) {
         throw new Error("Invalid credentials");

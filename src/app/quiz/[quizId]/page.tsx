@@ -4,6 +4,7 @@ import React, { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { sampleQuizzes } from "@/data/quizzes";
 import { QuizTimer } from "@/components/QuizTimer";
+import { submitQuizResult } from "@/lib/db";
 import styles from "./quiz.module.css";
 
 interface QuizPageProps {
@@ -92,6 +93,25 @@ export default function QuizPage({ params }: QuizPageProps) {
     setTimeTaken(cappedElapsed);
     setSubmitted(true);
     setShowConfirmModal(false);
+
+    // Save dynamic submission to the unified database
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("user");
+      if (stored) {
+        const u = JSON.parse(stored);
+        const percentScore = `${Math.round((correctCount / quiz.questions.length) * 100)}%`;
+        
+        submitQuizResult({
+          name: u.name,
+          email: u.email,
+          quizId: quiz.id,
+          subject: `${quiz.subject} - ${quiz.title}`,
+          score: percentScore,
+          date: new Date().toISOString().replace("T", " ").substring(0, 16),
+          status: "Approved"
+        });
+      }
+    }
   };
 
   const handleManualSubmit = () => {

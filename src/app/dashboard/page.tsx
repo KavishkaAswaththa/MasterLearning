@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import styles from "./page.module.css";
+import { getUsersRegistry, deleteUserFromRegistry, getRecentSubmissions, QuizSubmission } from "@/lib/db";
 import Sidebar from "@/components/Sidebar";
 import ProfileSummary from "@/components/ProfileSummary";
 import CourseCard, { CourseData } from "@/components/CourseCard";
@@ -29,28 +30,32 @@ export default function Dashboard() {
     }
     return null;
   });
-  const [registeredUsers, setRegisteredUsers] = useState<{ name: string; email: string; role: string }[]>(() => {
-    if (typeof window !== "undefined") {
-      const storedReg = localStorage.getItem("registered_users");
-      return storedReg ? JSON.parse(storedReg) : [];
-    }
-    return [];
-  });
+  const [registeredUsers, setRegisteredUsers] = useState<{ name: string; email: string; role: string }[]>([]);
+  const [submissions, setSubmissions] = useState<QuizSubmission[]>([]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const storedUser = localStorage.getItem("user");
       if (!storedUser) {
         window.location.href = "/login?error=auth_required";
+        return;
       }
+
+      getUsersRegistry().then((list) => {
+        setRegisteredUsers(list);
+      });
+
+      getRecentSubmissions().then((list) => {
+        setSubmissions(list);
+      });
     }
   }, []);
 
   // Admin: Delete registered user
-  const handleDeleteUser = (emailToDelete: string) => {
+  const handleDeleteUser = async (emailToDelete: string) => {
+    await deleteUserFromRegistry(emailToDelete);
     const updated = registeredUsers.filter(u => u.email !== emailToDelete);
     setRegisteredUsers(updated);
-    localStorage.setItem("registered_users", JSON.stringify(updated));
   };
 
   const mockCourses: CourseData[] = [
@@ -327,12 +332,7 @@ export default function Dashboard() {
                       </tr>
                     </thead>
                     <tbody style={{ fontSize: "0.9rem" }}>
-                      {[
-                        { name: "Kavishka Aswaththa", subject: "Grade 10 Science Quiz", score: "90%", date: "Today, 4:12 PM", status: "Approved" },
-                        { name: "Nishadi Perera", subject: "Grade 11 Pure Mathematics", score: "80%", date: "Today, 1:45 PM", status: "Approved" },
-                        { name: "Tharushi Buddhika", subject: "Grade 11 Programming Concepts", score: "95%", date: "Yesterday, 3:30 PM", status: "Approved" },
-                        { name: "Dilshan Mindika", subject: "Grade 10 Science Quiz", score: "70%", date: "July 12, 11:15 AM", status: "Approved" }
-                      ].map((sub, idx) => (
+                      {submissions.map((sub, idx) => (
                         <tr key={idx} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                           <td style={{ padding: "12px 10px", fontWeight: "bold" }}>{sub.name}</td>
                           <td style={{ padding: "12px 10px", color: "var(--text-secondary)" }}>{sub.subject}</td>
