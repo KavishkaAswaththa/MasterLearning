@@ -79,18 +79,30 @@ export default function UsersDirectoryPage() {
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newName.trim() || !newEmail.trim()) {
-      showToast("Name and Email are required!", "error");
+    const cleanName = newName.trim();
+    const cleanEmail = newEmail.toLowerCase().trim();
+
+    if (cleanName.length < 2) {
+      showToast("Full Name must be at least 2 characters long.", "error");
       return;
     }
+    if (!cleanEmail.includes("@") || !cleanEmail.includes(".")) {
+      showToast("Please enter a valid email address.", "error");
+      return;
+    }
+    if (newPassword.length < 6) {
+      showToast("Password must be at least 6 characters long.", "error");
+      return;
+    }
+
     const success = await registerUser({
-      name: newName,
-      email: newEmail.toLowerCase().trim(),
+      name: cleanName,
+      email: cleanEmail,
       role: newRole,
       password: newPassword
     });
     if (success) {
-      showToast(`User ${newName} created successfully!`, "success");
+      showToast(`User ${cleanName} created successfully!`, "success");
       setShowCreateModal(false);
       setNewName("");
       setNewEmail("");
@@ -112,7 +124,12 @@ export default function UsersDirectoryPage() {
   const handleSaveUserEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingUser) return;
-    const success = await updateUserInRegistry(editingUser.email, editName, editRole);
+    const cleanName = editName.trim();
+    if (cleanName.length < 2) {
+      showToast("Full Name must be at least 2 characters long.", "error");
+      return;
+    }
+    const success = await updateUserInRegistry(editingUser.email, cleanName, editRole);
     if (success) {
       showToast(`Profile for ${editName} updated!`, "success");
       setShowEditModal(false);

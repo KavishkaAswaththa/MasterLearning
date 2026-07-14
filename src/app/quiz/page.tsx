@@ -16,6 +16,26 @@ interface QuizData {
   grade: string;
 }
 
+const parseScoreToPercentage = (scoreStr: string): number => {
+  if (!scoreStr) return 0;
+  
+  if (scoreStr.includes("%")) {
+    const val = parseFloat(scoreStr.replace("%", ""));
+    return isNaN(val) ? 0 : val;
+  }
+  
+  if (scoreStr.includes("/")) {
+    const parts = scoreStr.split("/");
+    const num = parseFloat(parts[0]);
+    const den = parseFloat(parts[1]);
+    if (isNaN(num) || isNaN(den) || den === 0) return 0;
+    return (num / den) * 100;
+  }
+  
+  const fallback = parseFloat(scoreStr);
+  return isNaN(fallback) ? 0 : fallback;
+};
+
 export default function QuizListPage() {
   const [user, setUser] = useState<{ email: string; role: string; name: string } | null>(null);
   const [submissions, setSubmissions] = useState<QuizSubmission[]>([]);
@@ -121,16 +141,11 @@ export default function QuizListPage() {
   const totalSubmissions = processedSubmissions.length;
   const averageScore = processedSubmissions.length > 0
     ? (processedSubmissions.reduce((acc, curr) => {
-        const parts = curr.score.split("/");
-        const value = parts.length > 0 ? parseFloat(parts[0]) : 0;
-        const total = parts.length > 1 ? parseFloat(parts[1]) : 10;
-        return acc + (value / total) * 100;
+        return acc + parseScoreToPercentage(curr.score);
       }, 0) / processedSubmissions.length).toFixed(0) + "%"
     : "N/A";
   const passedSubmissions = processedSubmissions.filter(sub => {
-    const parts = sub.score.split("/");
-    const val = parseFloat(parts[0]);
-    return val >= 5;
+    return parseScoreToPercentage(sub.score) >= 50;
   }).length;
 
   // Apply search
@@ -156,14 +171,10 @@ export default function QuizListPage() {
     if (quizSort === "date-desc") return new Date(b.date).getTime() - new Date(a.date).getTime();
     if (quizSort === "date-asc") return new Date(a.date).getTime() - new Date(b.date).getTime();
     if (quizSort === "score-desc") {
-      const valA = parseFloat(a.score.split("/")[0]) / parseFloat(a.score.split("/")[1] || "1");
-      const valB = parseFloat(b.score.split("/")[0]) / parseFloat(b.score.split("/")[1] || "1");
-      return valB - valA;
+      return parseScoreToPercentage(b.score) - parseScoreToPercentage(a.score);
     }
     if (quizSort === "score-asc") {
-      const valA = parseFloat(a.score.split("/")[0]) / parseFloat(a.score.split("/")[1] || "1");
-      const valB = parseFloat(b.score.split("/")[0]) / parseFloat(b.score.split("/")[1] || "1");
-      return valA - valB;
+      return parseScoreToPercentage(a.score) - parseScoreToPercentage(b.score);
     }
     return 0;
   });
