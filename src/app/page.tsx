@@ -1,29 +1,73 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  BookOpen, 
-  Award, 
-  GraduationCap, 
-  Lock, 
-  ArrowRight, 
-  Menu, 
-  X, 
-  CheckCircle, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Send 
+  Sparkles,
+  Zap,
+  Trophy,
+  ChevronLeft,
+  ChevronRight,
+  BookOpen,
+  GraduationCap,
+  Lock,
+  ArrowRight,
+  CheckCircle,
+  Award,
+  Mail,
+  Phone,
+  MapPin,
+  Send,
+  Search,
+  Heart,
+  ShoppingCart,
+  User,
+  Menu,
+  X
 } from "lucide-react";
 import styles from "./page.module.css";
+
+const MAIN_SLIDES = [
+  {
+    id: 1,
+    title: "Ultimate Assessments",
+    subtitle: "Experience the pinnacle of gamified learning with our responsive countdown quiz dashboards.",
+    image: "/ml_slide_quiz.png",
+    tag: "Quiz Portal",
+    icon: BookOpen
+  },
+  {
+    id: 2,
+    title: "Gamified Progress",
+    subtitle: "Track your academic journey. Earn XP points, rank on leaderboards, and unlock digital rewards.",
+    image: "/ml_slide_dashboard.png",
+    tag: "Progress Logs",
+    icon: Trophy
+  },
+  {
+    id: 3,
+    title: "Immersive Lectures",
+    subtitle: "Review video lectures at your own pace with slide-in lesson indices and downloadable materials.",
+    image: "/ml_slide_classroom.png",
+    tag: "Virtual Classrooms",
+    icon: GraduationCap
+  }
+];
 
 export default function Home() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("home");
   
+  // Slider State
+  const [slideIndex, setSlideIndex] = useState(0);
+  const [isSliderHovered, setIsSliderHovered] = useState(false);
+
+  // Mobile Search Overlay State
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
   // Contact Form State
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -31,11 +75,32 @@ export default function Home() {
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [formError, setFormError] = useState("");
 
+  // Newsletter Email State
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [newsletterSubscribed, setNewsletterSubscribed] = useState(false);
+
   const homeRef = useRef<HTMLDivElement>(null);
   const featuresRef = useRef<HTMLDivElement>(null);
   const coursesRef = useRef<HTMLDivElement>(null);
   const aboutRef = useRef<HTMLDivElement>(null);
   const contactRef = useRef<HTMLDivElement>(null);
+
+  // Slider controls
+  const nextSlide = useCallback(() => {
+    setSlideIndex((prev) => (prev + 1) % MAIN_SLIDES.length);
+  }, []);
+
+  const prevSlide = useCallback(() => {
+    setSlideIndex((prev) => (prev - 1 + MAIN_SLIDES.length) % MAIN_SLIDES.length);
+  }, []);
+
+  // Automatic slider rotation (7s)
+  useEffect(() => {
+    if (!isSliderHovered) {
+      const timer = setInterval(nextSlide, 7000);
+      return () => clearInterval(timer);
+    }
+  }, [isSliderHovered, nextSlide]);
 
   // Scroll detection for navbar
   useEffect(() => {
@@ -129,6 +194,19 @@ export default function Home() {
     }, 1000);
   };
 
+  const handleNewsletterSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newsletterEmail.trim()) return;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newsletterEmail)) return;
+
+    // Simulate API subscribe call
+    setTimeout(() => {
+      setNewsletterSubscribed(true);
+      setNewsletterEmail("");
+    }, 800);
+  };
+
   // Framer Motion Animation Variants
   const fadeInUp = {
     hidden: { opacity: 0, y: 30 },
@@ -159,41 +237,138 @@ export default function Home() {
       {/* Header / Navigation */}
       <nav className={`${styles.navbar} ${isScrolled ? styles.navbarScrolled : ""}`}>
         <div className={styles.navContainer}>
+          {/* Logo */}
           <div className={styles.logo} onClick={() => scrollToSection("home")}>
             <div className={styles.logoIcon}>ML</div>
-            <span className="gradient-text">MasterLearning</span>
+            <span className={styles.logoText}>
+              Master<span className={styles.logoHighlight}>Learning</span>
+            </span>
           </div>
 
-          <ul className={styles.navLinks}>
+          {/* Desktop Capsule Nav */}
+          <div className={styles.desktopNavCapsule}>
             {["home", "features", "courses", "about", "contact"].map((sec) => (
-              <li key={sec}>
-                <span 
-                  className={`${styles.navLink} ${activeSection === sec ? styles.navLinkActive : ""}`}
-                  onClick={() => scrollToSection(sec)}
-                >
-                  {sec.charAt(0).toUpperCase() + sec.slice(1)}
-                </span>
-              </li>
+              <span 
+                key={sec}
+                className={`${styles.navLink} ${activeSection === sec ? styles.navLinkActive : ""}`}
+                onClick={() => scrollToSection(sec)}
+              >
+                {sec === "courses" ? "Curriculum" : sec.charAt(0).toUpperCase() + sec.slice(1)}
+              </span>
             ))}
-          </ul>
-
-          <div className={styles.navActions}>
-            <Link href="/login" className={styles.btnSignIn}>
-              Sign In
-            </Link>
-            <Link href="/signup" className={styles.btnSignUp}>
-              Get Started
-            </Link>
           </div>
 
-          <button 
-            className={styles.mobileMenuBtn}
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Toggle Navigation Menu"
-          >
-            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+          {/* Right Actions */}
+          <div className={styles.navActions}>
+            {/* Quick Search Input */}
+            <div className={styles.searchWrapper}>
+              <input 
+                type="text" 
+                placeholder="Search lessons..." 
+                className={styles.searchInput}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && searchQuery.trim()) {
+                    alert(`Search query: ${searchQuery}`);
+                    setSearchQuery("");
+                  }
+                }}
+              />
+              <button className={styles.searchIconBtn} aria-label="Search button">
+                <Search size={16} />
+              </button>
+            </div>
+
+            {/* Mobile Search Icon Trigger */}
+            <button 
+              className={`${styles.iconBtn} sm:hidden`}
+              onClick={() => setIsSearchOpen(true)}
+              aria-label="Open search input"
+            >
+              <Search size={18} />
+            </button>
+
+            {/* Wishlist / Saved Lessons Icon */}
+            <button className={styles.iconBtn} onClick={() => alert("Saved lessons list is empty")} aria-label="Saved lessons">
+              <Heart size={18} />
+              <span className={styles.iconBadge}>0</span>
+            </button>
+
+            {/* Cart / Enrolled Courses Icon */}
+            <button className={styles.iconBtn} onClick={() => alert("No enrolled courses yet")} aria-label="Enrolled courses">
+              <ShoppingCart size={18} />
+              <span className={styles.iconBadge}>0</span>
+            </button>
+
+            <div className={styles.divider}></div>
+
+            {/* User Profile / Dashboard Redirect */}
+            <Link href="/dashboard" className={styles.iconBtn} aria-label="Dashboard Link">
+              <User size={18} />
+            </Link>
+
+            {/* Mobile menu toggle */}
+            <button 
+              className={styles.mobileMenuBtn}
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle Navigation Drawer"
+            >
+              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+          </div>
         </div>
+
+        {/* Sliding Search Overlay for Mobile */}
+        <AnimatePresence>
+          {isSearchOpen && (
+            <motion.div
+              className={styles.mobileSearchOverlay}
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div className={styles.mobileSearchInputWrapper}>
+                <input
+                  type="text"
+                  placeholder="Search lessons..."
+                  className={styles.mobileSearchInput}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && searchQuery.trim()) {
+                      alert(`Search query: ${searchQuery}`);
+                      setSearchQuery("");
+                      setIsSearchOpen(false);
+                    }
+                  }}
+                  autoFocus
+                />
+                <button 
+                  className={styles.searchIconBtn}
+                  onClick={() => {
+                    if (searchQuery.trim()) {
+                      alert(`Search query: ${searchQuery}`);
+                      setSearchQuery("");
+                      setIsSearchOpen(false);
+                    }
+                  }}
+                  aria-label="Submit search"
+                >
+                  <Search size={18} />
+                </button>
+              </div>
+              <button 
+                className={styles.iconBtn}
+                onClick={() => setIsSearchOpen(false)}
+                aria-label="Close search"
+              >
+                <X size={18} />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </nav>
 
       {/* Mobile Nav Overlay */}
@@ -206,6 +381,27 @@ export default function Home() {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.25 }}
           >
+            {/* Mobile search inside drawer */}
+            <div className={styles.mobileSearchInputWrapper}>
+              <input
+                type="text"
+                placeholder="Search lessons..."
+                className={styles.mobileSearchInput}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && searchQuery.trim()) {
+                    alert(`Search query: ${searchQuery}`);
+                    setSearchQuery("");
+                    setMobileMenuOpen(false);
+                  }
+                }}
+              />
+              <button className={styles.searchIconBtn} aria-label="Submit mobile search">
+                <Search size={18} />
+              </button>
+            </div>
+
             <ul className={styles.mobileNavLinks}>
               {["home", "features", "courses", "about", "contact"].map((sec) => (
                 <li key={sec}>
@@ -213,135 +409,174 @@ export default function Home() {
                     className={`${styles.mobileNavLink} ${activeSection === sec ? styles.mobileNavLinkActive : ""}`}
                     onClick={() => scrollToSection(sec)}
                   >
-                    {sec.charAt(0).toUpperCase() + sec.slice(1)}
+                    <span>{sec === "courses" ? "Curriculum" : sec.charAt(0).toUpperCase() + sec.slice(1)}</span>
+                    <Sparkles className={styles.mobileNavLinkIcon} size={14} />
                   </span>
                 </li>
               ))}
             </ul>
             <div className={styles.mobileNavActions}>
               <Link href="/login" className={styles.btnSignIn} onClick={() => setMobileMenuOpen(false)}>
-                Sign In
+                Account Login
               </Link>
-              <Link href="/signup" className={styles.btnSignUp} onClick={() => setMobileMenuOpen(false)}>
-                Get Started
+              <Link href="/dashboard" className={styles.btnSignUp} onClick={() => setMobileMenuOpen(false)}>
+                My Dashboard
               </Link>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
+      {/* 1. Slider Hero Section */}
       <section 
         id="home" 
         ref={homeRef} 
-        className={`${styles.section} ${styles.heroSection}`}
+        className={styles.heroSection}
       >
         <div className={styles.heroGrid}>
-          <motion.div 
-            className={styles.heroTextContent}
-            initial={{ opacity: 0, x: -40 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-          >
-            <span className={styles.heroBadge}>🚀 Gamified Learning Experience</span>
-            <h1 className={styles.heroTitle}>
-              Reimagine How You <br/>
-              <span className="gradient-text">Master New Skills</span>
-            </h1>
-            <p className={styles.heroSubtitle}>
-              MasterLearning is a scalable, cloud-native e-learning platform with gamified assessment 
-              pathways, real-time rewards tracking, and interactive video classrooms.
-            </p>
-            <div className={styles.heroButtons}>
-              <Link href="/dashboard" className={styles.btnPrimary}>
-                Explore Dashboard <ArrowRight size={18} />
-              </Link>
-              <button onClick={() => scrollToSection("courses")} className={styles.btnSecondary}>
-                Browse Quizzes
-              </button>
+          {/* Left Vertical Banner (Visible on lg/desktop only) */}
+          <div className={styles.heroLeftCol}>
+            <motion.img 
+              src="/ml_hero_vertical.png" 
+              alt="Smart Learning Features Banner" 
+              className={styles.heroLeftBg}
+              animate={{ scale: [1, 1.05, 1] }}
+              transition={{ repeat: Infinity, duration: 15, ease: "linear" }}
+            />
+            <div className={styles.heroLeftOverlay}>
+              <motion.div
+                animate={{ y: [0, -5, 0] }}
+                transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+              >
+                <div className={styles.heroLeftIcon}>
+                  <Zap size={22} />
+                </div>
+                <h3 className={styles.heroLeftTitle}>Smart<br/>Learning</h3>
+                <p className={styles.heroLeftDesc}>Track your achievements, earn badges, and dominate classroom leaderboards.</p>
+                <button onClick={() => scrollToSection("features")} className={styles.btnLeftCol}>
+                  Explore More <ArrowRight size={14} />
+                </button>
+              </motion.div>
             </div>
-          </motion.div>
+          </div>
 
-          <motion.div 
-            className={styles.heroIllustration}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-          >
-            {/* Premium Animated Dashboard Mock */}
-            <motion.div 
-              className={styles.mockDashboardWrapper}
-              animate={{ y: [0, -12, 0] }}
-              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+          {/* Right Area (Slider and Banners) */}
+          <div className={styles.heroRightCol}>
+            {/* Slider Container */}
+            <div 
+              className={styles.sliderWrapper}
+              onMouseEnter={() => setIsSliderHovered(true)}
+              onMouseLeave={() => setIsSliderHovered(false)}
             >
-              <div className={styles.mockNavbar}>
-                <div className={styles.mockDots}>
-                  <span className={styles.mockDot} style={{ backgroundColor: "#ef4444" }}></span>
-                  <span className={styles.mockDot} style={{ backgroundColor: "#eab308" }}></span>
-                  <span className={styles.mockDot} style={{ backgroundColor: "#22c55e" }}></span>
-                </div>
-                <div className={styles.mockTitle}>MasterLearning Platform V1.0</div>
-                <div style={{ width: 38 }}></div>
+              {/* Slides */}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={slideIndex}
+                  initial={{ opacity: 0, scale: 1.05 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.98 }}
+                  transition={{ duration: 1.0, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
+                  className={styles.slideItem}
+                >
+                  <div className={styles.slideOverlay} />
+                  <img 
+                    src={MAIN_SLIDES[slideIndex].image} 
+                    alt={MAIN_SLIDES[slideIndex].title} 
+                    className={styles.slideBg}
+                  />
+                </motion.div>
+              </AnimatePresence>
+
+              {/* Navigation Arrows */}
+              <div className={styles.sliderArrows}>
+                <button onClick={prevSlide} className={styles.arrowBtn} aria-label="Previous slide">
+                  <ChevronLeft size={24} />
+                </button>
+                <button onClick={nextSlide} className={styles.arrowBtn} aria-label="Next slide">
+                  <ChevronRight size={24} />
+                </button>
               </div>
 
-              <div className={styles.mockGrid}>
-                <div className={styles.mockMain}>
-                  <div className={styles.mockGraph}>
-                    <div className={styles.mockGraphLine}>
-                      <motion.div 
-                        className={styles.mockGraphBar} 
-                        style={{ height: "40%" }}
-                        animate={{ height: ["40%", "75%", "40%"] }}
-                        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                      ></motion.div>
-                      <motion.div 
-                        className={styles.mockGraphBar} 
-                        style={{ height: "60%" }}
-                        animate={{ height: ["60%", "90%", "60%"] }}
-                        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-                      ></motion.div>
-                      <motion.div 
-                        className={styles.mockGraphBar} 
-                        style={{ height: "30%" }}
-                        animate={{ height: ["30%", "65%", "30%"] }}
-                        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                      ></motion.div>
-                      <motion.div 
-                        className={styles.mockGraphBar} 
-                        style={{ height: "70%" }}
-                        animate={{ height: ["70%", "45%", "70%"] }}
-                        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
-                      ></motion.div>
+              {/* Slide Content Overlay */}
+              <div className={styles.slideContent}>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={slideIndex}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.4 }}
+                  >
+                    {/* Badge */}
+                    <div className={styles.slideBadge}>
+                      {React.createElement(MAIN_SLIDES[slideIndex].icon, { size: 14 })}
+                      <span className={styles.slideBadgeText}>{MAIN_SLIDES[slideIndex].tag}</span>
                     </div>
-                  </div>
-                  <div className={styles.mockDetails}>
-                    <div className={styles.mockTextLine} style={{ width: "80%" }}></div>
-                    <div className={styles.mockTextLine} style={{ width: "50%" }}></div>
-                  </div>
-                </div>
 
-                <div className={styles.mockSidebar}>
-                  <div className={styles.mockProgressCircle}>
-                    <motion.span
-                      animate={{ opacity: [0.6, 1, 0.6] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    >
-                      85% XP
-                    </motion.span>
-                  </div>
-                  <div className={styles.mockLeaderboard}>
-                    <div className={styles.mockUserRow}>
-                      <span className={styles.mockAvatar}></span>
-                      <div className={styles.mockTextLine} style={{ width: "30px" }}></div>
+                    {/* Title */}
+                    <h1 className={styles.slideTitle}>
+                      {MAIN_SLIDES[slideIndex].title.split(" ").map((word, i) => (
+                        <span key={i} className={styles.slideTitleSpan}>{word}</span>
+                      ))}
+                    </h1>
+
+                    {/* Description */}
+                    <p className={styles.slideDesc}>{MAIN_SLIDES[slideIndex].subtitle}</p>
+
+                    {/* Buttons */}
+                    <div className={styles.slideButtons}>
+                      <button onClick={() => scrollToSection("courses")} className={`${styles.btnSliderDiscover} btn-shine`}>
+                        Discover Now
+                      </button>
+                      <button onClick={() => scrollToSection("features")} className={styles.btnSliderCatalog}>
+                        <div className={styles.sliderArrowIcon}>
+                          <ChevronRight size={14} />
+                        </div>
+                        <span>View Catalog</span>
+                      </button>
                     </div>
-                    <div className={styles.mockUserRow}>
-                      <span className={styles.mockAvatar} style={{ background: "var(--color-purple)" }}></span>
-                      <div className={styles.mockTextLine} style={{ width: "40px" }}></div>
-                    </div>
-                  </div>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+
+              {/* Progress Dots */}
+              <div className={styles.sliderDots}>
+                {MAIN_SLIDES.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setSlideIndex(i)}
+                    className={`${styles.dot} ${slideIndex === i ? styles.dotActive : ""}`}
+                    aria-label={`Go to slide ${i + 1}`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Bottom Banners Grid */}
+            <div className={styles.bottomBannerGrid}>
+              {/* Banner 1: Daily Quiz */}
+              <div className={styles.bannerCard}>
+                <img src="/ml_banner_quiz.png" alt="Quiz Assessment Banner" className={styles.bannerBg} />
+                <div className={styles.bannerOverlay}>
+                  <h3 className={styles.bannerTitle}>Daily Quiz</h3>
+                  <button onClick={() => scrollToSection("courses")} className={`${styles.btnBanner} btn-shine`}>
+                    Attempt Now <ArrowRight size={14} />
+                  </button>
                 </div>
               </div>
-            </motion.div>
-          </motion.div>
+
+              {/* Banner 2: Hall of Fame */}
+              <div className={styles.bannerCard}>
+                <div className={styles.bannerTextContent}>
+                  <span className={styles.bannerBadge}>Hall of Fame</span>
+                  <h3 className={styles.bannerTitle} style={{ color: "var(--foreground)" }}>Best Sellers</h3>
+                  <button onClick={() => scrollToSection("about")} className={styles.bannerLinkText}>
+                    Check XP Leaderboards <ArrowRight size={16} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -370,7 +605,7 @@ export default function Home() {
           {/* Feature 1: Quiz Portal */}
           <motion.div className={styles.featureCard} variants={fadeInUp}>
             <div className={styles.featureIconWrapper}>
-              <BookOpen size={24} />
+              <BookOpen size={20} />
             </div>
             <h3 className={styles.featureTitle}>Interactive Quiz Portal</h3>
             <p className={styles.featureDesc}>
@@ -384,7 +619,7 @@ export default function Home() {
           {/* Feature 2: Student Dashboard */}
           <motion.div className={styles.featureCard} variants={fadeInUp}>
             <div className={styles.featureIconWrapper}>
-              <Award size={24} />
+              <Award size={20} />
             </div>
             <h3 className={styles.featureTitle}>Student Dashboard</h3>
             <p className={styles.featureDesc}>
@@ -398,11 +633,11 @@ export default function Home() {
           {/* Feature 3: Video Classroom */}
           <motion.div className={styles.featureCard} variants={fadeInUp}>
             <div className={styles.featureIconWrapper}>
-              <GraduationCap size={24} />
+              <GraduationCap size={20} />
             </div>
             <h3 className={styles.featureTitle}>Video Classrooms</h3>
             <p className={styles.featureDesc}>
-              Stream high-definition recorded sessions with sliding chapter menus, real-time index bookmarks, and downloadable PDF worksheets.
+              Stream high-definition recorded lessons with sliding chapter menus, real-time index bookmarks, and downloadable PDF worksheets.
             </p>
             <span className={styles.featureLink} style={{ opacity: 0.6, cursor: "not-allowed" }}>
               Classroom Mocked
@@ -412,7 +647,7 @@ export default function Home() {
           {/* Feature 4: Secure Auth */}
           <motion.div className={styles.featureCard} variants={fadeInUp}>
             <div className={styles.featureIconWrapper}>
-              <Lock size={24} />
+              <Lock size={20} />
             </div>
             <h3 className={styles.featureTitle}>Secure Authentication</h3>
             <p className={styles.featureDesc}>
@@ -717,48 +952,138 @@ export default function Home() {
 
       {/* Footer Section */}
       <footer className={styles.footerSection}>
+        <div className={styles.footerAmbientGlow}></div>
         <div className={styles.footerGrid}>
+          {/* Brand Col */}
           <div className={styles.footerBranding}>
-            <div className={styles.footerLogo}>
-              <div className={styles.logoIcon}>ML</div>
-              <span className="gradient-text">MasterLearning</span>
+            <div className={styles.footerLogo} onClick={() => scrollToSection("home")}>
+              <div className={styles.footerLogoIcon}>ML</div>
+              <span className={styles.footerLogoText}>
+                Master<span className={styles.logoHighlight}>Learning</span>
+              </span>
             </div>
             <p className={styles.footerDesc}>
-              A high-performance cloud e-learning platform delivering responsive assessments and profile progress logs.
+              A premium e-learning platform delivering responsive assessments and student progress tracking.
             </p>
-            <div className={styles.footerSocials}>
-              <a href="#" className={styles.socialLink} aria-label="Twitter">🕊️</a>
-              <a href="#" className={styles.socialLink} aria-label="LinkedIn">💼</a>
-              <a href="#" className={styles.socialLink} aria-label="GitHub">💻</a>
+            <div className="space-y-4" style={{ marginTop: "0.5rem" }}>
+              <div className={styles.footerContactItem}>
+                <Phone className={styles.footerContactItemIcon} size={16} />
+                <span>+94 11 234 5678</span>
+              </div>
+              <div className={styles.footerContactItem}>
+                <MapPin className={styles.footerContactItemIcon} size={16} />
+                <span>Colombo, Sri Lanka</span>
+              </div>
+            </div>
+            <div className={styles.footerSocials} style={{ marginTop: "1rem" }}>
+              <a href="#" className={styles.socialLink} aria-label="Facebook">
+                <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c4.56-.93 8-4.96 8-9.8z"/>
+                </svg>
+              </a>
+              <a href="#" className={styles.socialLink} aria-label="Instagram">
+                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                </svg>
+              </a>
+              <a href="#" className={styles.socialLink} aria-label="TikTok">
+                <svg className="w-4 h-4 fill-current" viewBox="0 0 16 16" width="18" height="18" style={{ marginTop: "2px" }}>
+                  <path d="M9 0h1.98c.144.715.54 1.617 1.235 2.512C12.895 3.389 13.797 4 15 4v2c-1.753 0-3.07-.814-4-1.829V11a5 5 0 1 1-5-5v2a3 3 0 1 0 3 3z" />
+                </svg>
+              </a>
             </div>
           </div>
 
+          {/* Explore Col */}
           <div className={styles.footerLinksCol}>
-            <h4 className={styles.footerColTitle}>Navigation</h4>
+            <h4 className={styles.footerColTitle}>Explore</h4>
             <ul className={styles.footerLinks}>
-              <li><span style={{ cursor: "pointer" }} onClick={() => scrollToSection("home")}>Home</span></li>
-              <li><span style={{ cursor: "pointer" }} onClick={() => scrollToSection("features")}>Features</span></li>
-              <li><span style={{ cursor: "pointer" }} onClick={() => scrollToSection("courses")}>Curriculum</span></li>
-              <li><span style={{ cursor: "pointer" }} onClick={() => scrollToSection("about")}>About</span></li>
+              <li>
+                <span style={{ cursor: "pointer" }} onClick={() => scrollToSection("home")}>
+                  <span className={styles.footerLinksBullet}></span> Home
+                </span>
+              </li>
+              <li>
+                <span style={{ cursor: "pointer" }} onClick={() => scrollToSection("features")}>
+                  <span className={styles.footerLinksBullet}></span> Features
+                </span>
+              </li>
+              <li>
+                <span style={{ cursor: "pointer" }} onClick={() => scrollToSection("courses")}>
+                  <span className={styles.footerLinksBullet}></span> Curriculum
+                </span>
+              </li>
+              <li>
+                <span style={{ cursor: "pointer" }} onClick={() => scrollToSection("about")}>
+                  <span className={styles.footerLinksBullet}></span> About Us
+                </span>
+              </li>
             </ul>
           </div>
 
+          {/* Portals Col */}
           <div className={styles.footerLinksCol}>
             <h4 className={styles.footerColTitle}>Portals</h4>
             <ul className={styles.footerLinks}>
-              <li><Link href="/login">Student Sign In</Link></li>
-              <li><Link href="/signup">Student Register</Link></li>
-              <li><Link href="/dashboard">Main Dashboard</Link></li>
-              <li><Link href="/quiz/science-101">Science Assessment</Link></li>
+              <li>
+                <Link href="/login">
+                  <span className={styles.footerLinksBullet}></span> Student Login
+                </Link>
+              </li>
+              <li>
+                <Link href="/signup">
+                  <span className={styles.footerLinksBullet}></span> Student Signup
+                </Link>
+              </li>
+              <li>
+                <Link href="/dashboard">
+                  <span className={styles.footerLinksBullet}></span> Student Dashboard
+                </Link>
+              </li>
+              <li>
+                <Link href="/quiz/science-101">
+                  <span className={styles.footerLinksBullet}></span> Science Quiz
+                </Link>
+              </li>
             </ul>
+          </div>
+
+          {/* Newsletter Col */}
+          <div className={styles.footerLinksCol}>
+            <h4 className={styles.footerColTitle}>Stay Updated</h4>
+            <p className={styles.footerDesc}>
+              Get the latest updates and newsletter.
+            </p>
+            {newsletterSubscribed ? (
+              <div style={{ color: "#22c55e", fontSize: "0.9rem", fontWeight: 600, marginTop: "0.5rem" }}>
+                ✓ Subscribed successfully!
+              </div>
+            ) : (
+              <form onSubmit={handleNewsletterSubmit} className={styles.footerNewsletterWrapper}>
+                <input 
+                  type="email" 
+                  placeholder="Enter your email" 
+                  className={styles.footerNewsletterInput}
+                  value={newsletterEmail}
+                  onChange={(e) => setNewsletterEmail(e.target.value)}
+                />
+                <button type="submit" className={styles.btnNewsletterSubmit} aria-label="Subscribe email">
+                  <ArrowRight size={16} />
+                </button>
+              </form>
+            )}
           </div>
         </div>
 
+        {/* Bottom Credits */}
         <div className={styles.footerBottom}>
-          <p>© 2026 MasterLearning E-Learning Hub. Built for the Mini-Hackathon 24-Hour Plan.</p>
+          <p>© {new Date().getFullYear()} MasterLearning E-Learning Hub. All rights reserved.</p>
           <div className={styles.footerBottomLinks}>
-            <a href="#">Privacy Policy</a>
-            <a href="#">Terms of Use</a>
+            <a href="#">Terms</a>
+            <a href="#">Privacy</a>
+            <a href="#">Cookies</a>
           </div>
         </div>
       </footer>
