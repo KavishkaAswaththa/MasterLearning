@@ -79,8 +79,11 @@ export default function SignupPage() {
       <div className="glass-card" style={cardStyle}>
         {/* Portal Branding */}
         <div style={headerStyle}>
-          <div style={logoWrapperStyle}>
-            <span style={logoStyle}>ML</span>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", marginBottom: "20px" }}>
+            <div className="logo-icon-auth">ML</div>
+            <span className="logo-text-auth">
+              Master<span className="logo-highlight-auth">Learning</span>
+            </span>
           </div>
           <h1 style={titleStyle}>
             Create your <span className="gradient-text">Account</span>
