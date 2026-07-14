@@ -19,6 +19,12 @@ export default function CoursesPage() {
     }
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setUser(JSON.parse(storedUser));
+
+    const params = new URLSearchParams(window.location.search);
+    const searchVal = params.get("search");
+    if (searchVal) {
+      setSearchQuery(searchVal);
+    }
   }, []);
 
   const mockCourses: CourseData[] = [

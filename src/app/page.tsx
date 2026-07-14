@@ -268,7 +268,7 @@ export default function Home() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && searchQuery.trim()) {
-                    alert(`Search query: ${searchQuery}`);
+                    window.location.href = `/courses?search=${encodeURIComponent(searchQuery)}`;
                     setSearchQuery("");
                   }
                 }}
@@ -326,7 +326,7 @@ export default function Home() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && searchQuery.trim()) {
-                      alert(`Search query: ${searchQuery}`);
+                      window.location.href = `/courses?search=${encodeURIComponent(searchQuery)}`;
                       setSearchQuery("");
                       setIsSearchOpen(false);
                     }
@@ -337,7 +337,7 @@ export default function Home() {
                   className={styles.searchIconBtn}
                   onClick={() => {
                     if (searchQuery.trim()) {
-                      alert(`Search query: ${searchQuery}`);
+                      window.location.href = `/courses?search=${encodeURIComponent(searchQuery)}`;
                       setSearchQuery("");
                       setIsSearchOpen(false);
                     }
@@ -379,7 +379,7 @@ export default function Home() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && searchQuery.trim()) {
-                    alert(`Search query: ${searchQuery}`);
+                    window.location.href = `/courses?search=${encodeURIComponent(searchQuery)}`;
                     setSearchQuery("");
                     setMobileMenuOpen(false);
                   }

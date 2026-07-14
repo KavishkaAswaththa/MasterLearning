@@ -26,6 +26,34 @@ export default function Dashboard() {
   const [registeredUsers, setRegisteredUsers] = useState<{ name: string; email: string; role: string }[]>([]);
   const [submissions, setSubmissions] = useState<QuizSubmission[]>([]);
 
+  // Simulated actions state
+  const [backupStatus, setBackupStatus] = useState("idle"); // idle, backing_up, done
+  const [exportStatus, setExportStatus] = useState("idle"); // idle, exporting, done
+
+  const handleBackup = () => {
+    setBackupStatus("backing_up");
+    setTimeout(() => {
+      setBackupStatus("done");
+      setTimeout(() => setBackupStatus("idle"), 3000);
+    }, 2000);
+  };
+
+  const handleExport = () => {
+    setExportStatus("exporting");
+    setTimeout(() => {
+      setExportStatus("done");
+      // Simulate file download
+      const element = document.createElement("a");
+      const file = new Blob(["Email,Name,Role\nstudent@masterlearning.com,Kavishka Aswaththa,student\nteacher@masterlearning.com,Professor Davis,teacher"], {type: 'text/plain'});
+      element.href = URL.createObjectURL(file);
+      element.download = "masterlearning_student_report.csv";
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+      setTimeout(() => setExportStatus("idle"), 3000);
+    }, 2000);
+  };
+
 
 
   useEffect(() => {
@@ -436,10 +464,10 @@ export default function Dashboard() {
                 <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginBottom: "1.5rem" }}>Generate live worksheets or add multi-choice questions.</p>
                 
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                  <button onClick={() => alert("Quiz form template loaded")} style={{ display: "flex", alignItems: "center", gap: "10px", width: "100%", background: "var(--primary)", border: "none", color: "#ffffff", padding: "0.8rem", borderRadius: "10px", fontWeight: "bold", cursor: "pointer" }}>
+                  <button onClick={() => window.location.href = "/quiz?action=create"} style={{ display: "flex", alignItems: "center", gap: "10px", width: "100%", background: "var(--primary)", border: "none", color: "#ffffff", padding: "0.8rem", borderRadius: "10px", fontWeight: "bold", cursor: "pointer" }}>
                     <PlusCircle size={16} /> Create New Quiz
                   </button>
-                  <button onClick={() => alert("Lecture publisher workspace loaded")} style={{ display: "flex", alignItems: "center", gap: "10px", width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#ffffff", padding: "0.8rem", borderRadius: "10px", fontWeight: "bold", cursor: "pointer" }}>
+                  <button onClick={() => window.location.href = "/classroom?action=upload"} style={{ display: "flex", alignItems: "center", gap: "10px", width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#ffffff", padding: "0.8rem", borderRadius: "10px", fontWeight: "bold", cursor: "pointer" }}>
                     <GraduationCap size={16} /> Add Classroom Video
                   </button>
                 </div>
@@ -609,11 +637,11 @@ export default function Dashboard() {
                 <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginBottom: "1.5rem" }}>Quick buttons to manage student records and export reports.</p>
                 
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                  <button onClick={() => alert("Student database backed up successfully.")} style={{ display: "flex", alignItems: "center", gap: "10px", width: "100%", background: "var(--primary)", border: "none", color: "#ffffff", padding: "0.8rem", borderRadius: "10px", fontWeight: "bold", cursor: "pointer" }}>
-                    <Database size={16} /> Backup Student Records
+                  <button onClick={handleBackup} disabled={backupStatus !== "idle"} style={{ display: "flex", alignItems: "center", gap: "10px", width: "100%", background: backupStatus === "done" ? "#22c55e" : "var(--primary)", border: "none", color: "#ffffff", padding: "0.8rem", borderRadius: "10px", fontWeight: "bold", cursor: "pointer", opacity: backupStatus === "backing_up" ? 0.7 : 1 }}>
+                    <Database size={16} /> {backupStatus === "idle" ? "Backup Student Records" : backupStatus === "backing_up" ? "Backing up profiles..." : "Backup Completed! ✓"}
                   </button>
-                  <button onClick={() => alert("Student activity report exported successfully.")} style={{ display: "flex", alignItems: "center", gap: "10px", width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#ffffff", padding: "0.8rem", borderRadius: "10px", fontWeight: "bold", cursor: "pointer" }}>
-                    <ClipboardList size={16} /> Export Student Reports
+                  <button onClick={handleExport} disabled={exportStatus !== "idle"} style={{ display: "flex", alignItems: "center", gap: "10px", width: "100%", background: exportStatus === "done" ? "#22c55e" : "rgba(255,255,255,0.05)", border: exportStatus === "done" ? "none" : "1px solid rgba(255,255,255,0.08)", color: "#ffffff", padding: "0.8rem", borderRadius: "10px", fontWeight: "bold", cursor: "pointer", opacity: exportStatus === "exporting" ? 0.7 : 1 }}>
+                    <ClipboardList size={16} /> {exportStatus === "idle" ? "Export Student Reports" : exportStatus === "exporting" ? "Generating CSV..." : "Report Downloaded! ✓"}
                   </button>
                 </div>
               </div>
