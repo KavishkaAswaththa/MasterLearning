@@ -20,8 +20,6 @@ import {
   MapPin,
   Send,
   Search,
-  Heart,
-  ShoppingCart,
   User,
   Menu,
   X
@@ -289,17 +287,7 @@ export default function Home() {
               <Search size={18} />
             </button>
 
-            {/* Wishlist / Saved Lessons Icon */}
-            <button className={styles.iconBtn} onClick={() => alert("Saved lessons list is empty")} aria-label="Saved lessons">
-              <Heart size={18} />
-              <span className={styles.iconBadge}>0</span>
-            </button>
 
-            {/* Cart / Enrolled Courses Icon */}
-            <button className={styles.iconBtn} onClick={() => alert("No enrolled courses yet")} aria-label="Enrolled courses">
-              <ShoppingCart size={18} />
-              <span className={styles.iconBadge}>0</span>
-            </button>
 
             <div className={styles.divider}></div>
 

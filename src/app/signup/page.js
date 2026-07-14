@@ -14,6 +14,7 @@ export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [role, setRole] = useState("student");
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -46,16 +47,31 @@ export default function SignupPage() {
 
     try {
       // Simulate API call for user registration
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      
+      const localUsersStr = localStorage.getItem("registered_users");
+      const localUsers = localUsersStr ? JSON.parse(localUsersStr) : [];
+
+      const emailLower = email.toLowerCase();
+      const userExists = localUsers.some((u) => u.email.toLowerCase() === emailLower) ||
+        emailLower === "admin@masterlearning.com" ||
+        emailLower === "teacher@masterlearning.com" ||
+        emailLower === "student@masterlearning.com";
+
+      if (userExists) {
+        throw new Error("User already exists");
+      }
+
+      localUsers.push({ name, email, password, role });
+      localStorage.setItem("registered_users", JSON.stringify(localUsers));
       
       setSuccess("Account created successfully! Redirecting to login...");
       
-      // Simulate redirecting to login page
       setTimeout(() => {
         router.push("/login?registered=true");
-      }, 1500);
+      }, 1000);
     } catch (err) {
-      setError("Registration failed. This email may already be in use.");
+      setError(err.message === "User already exists" ? "This email is already in use. Please sign in." : "Registration failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -200,6 +216,40 @@ export default function SignupPage() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 disabled={isLoading}
               />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="role">Account Role</label>
+            <div className="input-container" style={{ position: "relative" }}>
+              <span className="input-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+              </span>
+              <select
+                id="role"
+                className="form-input"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                disabled={isLoading}
+                style={{
+                  appearance: "none",
+                  WebkitAppearance: "none",
+                  paddingRight: "2.5rem",
+                  cursor: "pointer",
+                  background: "rgba(255, 255, 255, 0.03)",
+                  width: "100%"
+                }}
+              >
+                <option value="student" style={{ backgroundColor: "#130e26", color: "#ffffff" }}>Student</option>
+                <option value="teacher" style={{ backgroundColor: "#130e26", color: "#ffffff" }}>Teacher</option>
+                <option value="admin" style={{ backgroundColor: "#130e26", color: "#ffffff" }}>Administrator</option>
+              </select>
+              <span style={{ position: "absolute", right: "16px", top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--foreground-muted)" }}>▼</span>
             </div>
           </div>
 

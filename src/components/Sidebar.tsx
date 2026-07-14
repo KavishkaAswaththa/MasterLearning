@@ -9,6 +9,21 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ activeTab = "dashboard", onTabChange }: SidebarProps) {
+  const [user] = React.useState<{ name: string; role: string; email?: string } | null>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("user");
+      return stored ? JSON.parse(stored) : { name: "Nishadi Perera", role: "student" };
+    }
+    return null;
+  });
+
+  const handleLogout = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("user");
+      window.location.href = "/login";
+    }
+  };
+
   const menuItems = [
     {
       id: "dashboard",
@@ -110,15 +125,19 @@ export default function Sidebar({ activeTab = "dashboard", onTabChange }: Sideba
       <div className={styles.footerSection}>
         <div className={styles.userCard}>
           <div className={styles.avatar}>
-            <div className={styles.avatarInner}>N</div>
+            <div className={styles.avatarInner}>
+              {user ? user.name.charAt(0).toUpperCase() : "N"}
+            </div>
           </div>
           <div className={styles.userInfo}>
-            <span className={styles.userName}>Nishadi Perera</span>
-            <span className={styles.userRole}>Student (Grade 11)</span>
+            <span className={styles.userName}>{user ? user.name : "Nishadi Perera"}</span>
+            <span className={styles.userRole}>
+              {user ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "Student"}
+            </span>
           </div>
         </div>
 
-        <button className={styles.logoutButton}>
+        <button className={styles.logoutButton} onClick={handleLogout}>
           <svg className={styles.logoutIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
             <polyline points="16 17 21 12 16 7" />

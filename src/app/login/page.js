@@ -4,6 +4,12 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+const SEEDED_USERS = [
+  { email: "admin@masterlearning.com", password: "password123", role: "admin", name: "Administrator" },
+  { email: "teacher@masterlearning.com", password: "password123", role: "teacher", name: "Professor Davis" },
+  { email: "student@masterlearning.com", password: "password123", role: "student", name: "Kavishka Aswaththa" }
+];
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -48,11 +54,28 @@ export default function LoginPage() {
 
     try {
       // Simulate API call for auth
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       
-      setSuccess("Login successful! Redirecting to dashboard...");
+      const localUsersStr = localStorage.getItem("registered_users");
+      const localUsers = localUsersStr ? JSON.parse(localUsersStr) : [];
+      const allUsers = [...SEEDED_USERS, ...localUsers];
+
+      const matchedUser = allUsers.find(
+        (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
+      );
+
+      if (!matchedUser) {
+        throw new Error("Invalid credentials");
+      }
+
+      localStorage.setItem("user", JSON.stringify({
+        email: matchedUser.email,
+        role: matchedUser.role,
+        name: matchedUser.name
+      }));
+
+      setSuccess(`Login successful! Redirecting to ${matchedUser.role} dashboard...`);
       
-      // Simulate redirecting to dashboard
       setTimeout(() => {
         router.push("/dashboard");
       }, 1000);
