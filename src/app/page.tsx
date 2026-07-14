@@ -280,7 +280,7 @@ export default function Home() {
 
             {/* Mobile Search Icon Trigger */}
             <button 
-              className={`${styles.iconBtn} sm:hidden`}
+              className={`${styles.iconBtn} ${styles.mobileSearchBtn}`}
               onClick={() => setIsSearchOpen(true)}
               aria-label="Open search input"
             >
@@ -953,16 +953,7 @@ export default function Home() {
             <p className={styles.footerDesc}>
               A premium e-learning platform delivering responsive assessments and student progress tracking.
             </p>
-            <div className="space-y-4" style={{ marginTop: "0.5rem" }}>
-              <div className={styles.footerContactItem}>
-                <Phone className={styles.footerContactItemIcon} size={16} />
-                <span>+94 11 234 5678</span>
-              </div>
-              <div className={styles.footerContactItem}>
-                <MapPin className={styles.footerContactItemIcon} size={16} />
-                <span>Colombo, Sri Lanka</span>
-              </div>
-            </div>
+
             <div className={styles.footerSocials} style={{ marginTop: "1rem" }}>
               <a href="#" className={styles.socialLink} aria-label="Facebook">
                 <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">

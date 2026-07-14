@@ -24,6 +24,8 @@ export default function LoginPage() {
       const params = new URLSearchParams(window.location.search);
       if (params.get("registered") === "true") {
         setSuccess("Account created successfully! You can now log in.");
+      } else if (params.get("error") === "auth_required") {
+        setError("Please log in to your account to access dashboard resources or take quizzes.");
       }
     }
   }, []);

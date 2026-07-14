@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styles from "./page.module.css";
 import Sidebar from "@/components/Sidebar";
 import ProfileSummary from "@/components/ProfileSummary";
@@ -25,7 +25,7 @@ export default function Dashboard() {
   const [user] = useState<{ email: string; role: string; name: string } | null>(() => {
     if (typeof window !== "undefined") {
       const storedUser = localStorage.getItem("user");
-      return storedUser ? JSON.parse(storedUser) : { email: "student@masterlearning.com", role: "student", name: "Kavishka Aswaththa" };
+      return storedUser ? JSON.parse(storedUser) : null;
     }
     return null;
   });
@@ -36,6 +36,15 @@ export default function Dashboard() {
     }
     return [];
   });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedUser = localStorage.getItem("user");
+      if (!storedUser) {
+        window.location.href = "/login?error=auth_required";
+      }
+    }
+  }, []);
 
   // Admin: Delete registered user
   const handleDeleteUser = (emailToDelete: string) => {

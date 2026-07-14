@@ -27,6 +27,12 @@ export default function QuizPage({ params }: QuizPageProps) {
 
   useEffect(() => {
     setIsMounted(true);
+    if (typeof window !== "undefined") {
+      const user = localStorage.getItem("user");
+      if (!user) {
+        window.location.href = "/login?error=auth_required";
+      }
+    }
   }, []);
 
   if (!isMounted) {
