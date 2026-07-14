@@ -60,6 +60,15 @@ export default function ClassroomPage() {
   const [chatMessages, setChatMessages] = useState<{ user: string; text: string }[]>([]);
   const [chatInput, setChatInput] = useState("");
 
+  // Live timer states
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  const formatTime = (secs: number) => {
+    const m = Math.floor(secs / 60).toString().padStart(2, "0");
+    const s = (secs % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+  };
+
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (!storedUser) {
@@ -76,6 +85,45 @@ export default function ClassroomPage() {
       setShowCreateLiveModal(true);
     }
   }, []);
+
+  // Ticker for live stream elapsed time
+  useEffect(() => {
+    let interval: NodeJS.Timeout | undefined;
+    if (activeStream && activeStream.isLive) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setElapsedSeconds(0);
+      interval = setInterval(() => {
+        setElapsedSeconds(prev => prev + 1);
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [activeStream]);
+
+  // Simulated peer students chats
+  useEffect(() => {
+    let timer: NodeJS.Timeout | undefined;
+    if (activeStream && activeStream.isLive) {
+      const mockStudentChats = [
+        { user: "Nishadi Perera", text: "This explanation makes so much sense now! Thank you." },
+        { user: "John Carter", text: "Will this topic be tested in the math quiz?" },
+        { user: "Amara Dias", text: "Yes John, it is scheduled for tomorrow." },
+        { user: "Professor Davis", text: "Remember to download the lecture handouts from the courses section." },
+        { user: "Dinesh Silva", text: "Perfect, downloaded! ✓" }
+      ];
+      let chatIdx = 0;
+      timer = setInterval(() => {
+        if (chatIdx < mockStudentChats.length) {
+          setChatMessages(prev => [...prev, mockStudentChats[chatIdx]]);
+          chatIdx++;
+        }
+      }, 4000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [activeStream]);
 
   const handleCreateLive = (e: React.FormEvent) => {
     e.preventDefault();
@@ -284,21 +332,27 @@ export default function ClassroomPage() {
             <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
               <div style={{ position: "relative", width: "100%", flexGrow: 1, borderRadius: "12px", background: "radial-gradient(circle, #2e1065 0%, #090514 100%)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", border: "1px solid rgba(255,255,255,0.08)", overflow: "hidden" }}>
                 
-                {/* Simulated live video stream visual */}
-                <div style={{ width: "80px", height: "80px", borderRadius: "50%", background: activeStream.isLive ? "rgba(249,115,22,0.15)" : "rgba(139,92,246,0.15)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "1rem" }}>
-                  <PlayCircle size={40} color={activeStream.isLive ? "var(--color-orange)" : "var(--color-purple)"} />
-                </div>
-                
-                <h3 style={{ fontSize: "1.1rem", fontWeight: "bold", color: "#ffffff", textAlign: "center", padding: "0 1rem" }}>{activeStream.title}</h3>
-                <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", marginTop: "6px" }}>
-                  {activeStream.isLive ? "🎥 Stream Active | Live Broadcast Simulator" : "🍿 Playing Lecture Archive Recording"}
-                </p>
-                
                 {activeStream.isLive && (
-                  <span style={{ position: "absolute", top: "15px", left: "15px", background: "#ef4444", color: "#ffffff", padding: "4px 8px", borderRadius: "4px", fontSize: "0.7rem", fontWeight: "bold", textTransform: "uppercase" }}>
-                    Live
+                  <span style={{ position: "absolute", top: "15px", left: "15px", background: "#ef4444", color: "#ffffff", padding: "4px 8px", borderRadius: "4px", fontSize: "0.7rem", fontWeight: "bold", textTransform: "uppercase", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#ffffff", display: "inline-block", animation: "pulse 1.5s infinite" }}></span>
+                    Live ({formatTime(elapsedSeconds)})
                   </span>
                 )}
+
+                {/* Simulated Presentation Slide */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", height: "100%", padding: "2rem", textAlign: "center" }}>
+                  <div style={{ border: "2px dashed rgba(167, 139, 250, 0.3)", borderRadius: "12px", padding: "1.5rem", background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", width: "90%", display: "flex", flexDirection: "column", gap: "10px" }}>
+                    <div style={{ fontSize: "0.75rem", color: "var(--color-orange)", textTransform: "uppercase", fontWeight: "bold" }}>Lesson Subject Overview</div>
+                    <h3 style={{ fontSize: "1.2rem", fontWeight: "bold", color: "#ffffff" }}>{activeStream.title}</h3>
+                    <div style={{ height: "2px", background: "var(--gradient-primary)", width: "50px", margin: "5px auto" }}></div>
+                    <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", fontStyle: "italic" }}>
+                      {activeStream.isLive 
+                        ? "Active Webinar stream. Real-time class session instruction. Ask questions below."
+                        : "Archived classroom recaps. Student comments log history preserved below."}
+                    </div>
+                  </div>
+                </div>
+
               </div>
               <div style={{ padding: "10px 0 0 0" }}>
                 <h4 style={{ color: "#ffffff", fontSize: "1rem", fontWeight: "bold" }}>{activeStream.title}</h4>

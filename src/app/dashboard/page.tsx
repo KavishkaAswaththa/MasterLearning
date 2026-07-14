@@ -13,7 +13,8 @@ import {
   ClipboardList, 
   Database,
   PlusCircle,
-  TrendingUp
+  TrendingUp,
+  X
 } from "lucide-react";
 
 export default function Dashboard() {
@@ -25,6 +26,9 @@ export default function Dashboard() {
   const [user, setUser] = useState<{ email: string; role: string; name: string } | null>(null);
   const [registeredUsers, setRegisteredUsers] = useState<{ name: string; email: string; role: string }[]>([]);
   const [submissions, setSubmissions] = useState<QuizSubmission[]>([]);
+  
+  // Selected course syllabus overlay details state
+  const [selectedCourse, setSelectedCourse] = useState<CourseData | null>(null);
 
   // Simulated actions state
   const [backupStatus, setBackupStatus] = useState("idle"); // idle, backing_up, done
@@ -316,7 +320,7 @@ export default function Dashboard() {
               {filteredCourses.length > 0 ? (
                 <div className={styles.coursesGrid}>
                   {filteredCourses.map((course) => (
-                    <CourseCard key={course.id} course={course} />
+                    <CourseCard key={course.id} course={course} onSelect={() => setSelectedCourse(course)} />
                   ))}
                 </div>
               ) : (
@@ -681,6 +685,70 @@ export default function Dashboard() {
           </div>
         )}
       </main>
+
+      {/* Course Syllabus Modal Overlay */}
+      {selectedCourse && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1200, padding: "1.5rem" }}>
+          <div className="glass-panel" style={{ width: "100%", maxWidth: "700px", border: "1px solid var(--glass-border)", padding: "2rem", borderRadius: "20px", display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: "2rem", position: "relative" }}>
+            
+            {/* Close Button */}
+            <button onClick={() => setSelectedCourse(null)} style={{ position: "absolute", top: "15px", right: "15px", background: "none", border: "none", color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center" }}>
+              <X size={20} />
+            </button>
+
+            {/* Left Info Column */}
+            <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", textAlign: "left" }}>
+              <div>
+                <span style={{ fontSize: "0.75rem", background: "rgba(139,92,246,0.15)", color: "#a78bfa", padding: "4px 8px", borderRadius: "6px", fontWeight: "bold", textTransform: "uppercase" }}>
+                  {selectedCourse.grade}
+                </span>
+                <h3 style={{ fontSize: "1.3rem", fontWeight: "bold", color: "#ffffff", marginTop: "10px", marginBottom: "12px", lineHeight: "1.3" }}>{selectedCourse.title}</h3>
+                <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: "1.5" }}>{selectedCourse.description}</p>
+              </div>
+
+              <div style={{ marginTop: "20px" }}>
+                <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)", display: "block", marginBottom: "6px" }}>Progress Checklist</span>
+                <div style={{ width: "100%", height: "8px", background: "rgba(255,255,255,0.04)", borderRadius: "10px", overflow: "hidden", marginBottom: "8px" }}>
+                  <div style={{ width: `${selectedCourse.progress}%`, height: "100%", background: "var(--gradient-primary)" }}></div>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+                  <span>{selectedCourse.progress}% completed</span>
+                  <span>{selectedCourse.lessonsCount} lessons total</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Syllabus/Tasks Column */}
+            <div style={{ borderLeft: "1px solid rgba(255,255,255,0.06)", paddingLeft: "1.5rem", textAlign: "left" }}>
+              <h4 style={{ color: "#ffffff", fontSize: "0.95rem", fontWeight: "bold", marginBottom: "12px" }}>Course Learning Pathway</h4>
+              
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                {[
+                  { title: "Core Concepts & Webinar", desc: "Live instruction webinar and forum chat room.", actionLabel: "Join Live", path: "/classroom?action=schedule" },
+                  { title: "Syllabus Video Recaps", desc: "Access archives of lessons & dynamic formulas.", actionLabel: "Play Recaps", path: "/classroom" },
+                  { title: "Diagnostic Exercises Quiz", desc: "Formative worksheets to check comprehension.", actionLabel: "Start Paper", path: "/quiz" }
+                ].map((item, idx) => (
+                  <div key={idx} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)", borderRadius: "10px", padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ flex: 1, paddingRight: "10px" }}>
+                      <strong style={{ color: "#ffffff", fontSize: "0.85rem", display: "block" }}>{item.title}</strong>
+                      <span style={{ color: "var(--text-secondary)", fontSize: "0.75rem", display: "block", marginTop: "2px", lineHeight: "1.3" }}>{item.desc}</span>
+                    </div>
+                    <button 
+                      onClick={() => window.location.href = item.path}
+                      className="gradient-button" 
+                      style={{ padding: "6px 12px", fontSize: "0.75rem", borderRadius: "6px", whiteSpace: "nowrap" }}
+                    >
+                      {item.actionLabel}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
