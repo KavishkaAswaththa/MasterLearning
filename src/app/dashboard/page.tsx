@@ -171,6 +171,15 @@ export default function Dashboard() {
 
 
 
+  // Calculate logged-in student statistics
+  const mySubmissions = submissions.filter(sub => sub.email.toLowerCase() === (user ? user.email.toLowerCase() : ""));
+  const myAverageGrade = mySubmissions.length > 0
+    ? (mySubmissions.reduce((acc, curr) => {
+        const val = parseFloat(curr.score.replace("%", ""));
+        return acc + (isNaN(val) ? 0 : val);
+      }, 0) / mySubmissions.length).toFixed(0) + "%"
+    : "N/A";
+
   const studentsCount = allUsersList.filter(u => u.role === "student").length;
   const teachersCount = allUsersList.filter(u => u.role === "teacher").length;
 
@@ -225,16 +234,16 @@ export default function Dashboard() {
                 <div className={styles.welcomeBannerText}>
                   <h2>Ready for a challenge?</h2>
                   <p>
-                    You are only 550 XP away from reaching Level 13! Complete the remaining quizzes in Pure Mathematics to boost your score and unlock the &quot;Math Genius&quot; badge.
+                    You have finished {mySubmissions.length} quiz assessments with an average score of {myAverageGrade}! Review your logs below or start new courses to boost your score rank.
                   </p>
                   <div className={styles.statsRow}>
                     <div className={styles.bannerStat}>
-                      <span className={styles.bannerStatVal}>7 Days</span>
-                      <span className={styles.bannerStatLabel}>Study Streak</span>
+                      <span className={styles.bannerStatVal}>{mySubmissions.length} Done</span>
+                      <span className={styles.bannerStatLabel}>Quizzes Finished</span>
                     </div>
                     <div className={styles.bannerStat}>
-                      <span className={styles.bannerStatVal}>12 / 24</span>
-                      <span className={styles.bannerStatLabel}>Modules Done</span>
+                      <span className={styles.bannerStatVal}>{myAverageGrade}</span>
+                      <span className={styles.bannerStatLabel}>Average Grade</span>
                     </div>
                   </div>
                 </div>
@@ -328,11 +337,11 @@ export default function Dashboard() {
 
                 <div className={styles.scheduleList}>
                   {[
-                    { title: "Physics: Chapter 4 Quiz", meta: "Due: Today, 11:59 PM (Assessment)", type: "orange" },
-                    { title: "Organic Chemistry Live Class", meta: "Starts: Tomorrow, 10:00 AM (Classroom)", type: "purple" },
-                    { title: "Maths: Trigonometry Worksheet", meta: "Due: July 15, 4:00 PM (Exercise)", type: "orange" }
+                    { title: "Newtonian Physics Webinar", meta: "Time: Tomorrow, 9:00 AM (Classroom)", type: "purple", url: "/classroom" },
+                    { title: "Chemistry Assessment Paper", meta: "Due: July 16, 11:59 PM (Quiz)", type: "orange", url: "/quiz" },
+                    { title: "Trigonometry Masterclass", meta: "Time: July 16, 2:00 PM (Classroom)", type: "purple", url: "/classroom" }
                   ].map((task, i) => (
-                    <div className={styles.scheduleItem} key={i}>
+                    <div className={styles.scheduleItem} key={i} onClick={() => window.location.href = task.url} style={{ cursor: "pointer" }}>
                       <div className={`${styles.scheduleIndicator} ${task.type === "purple" ? styles.indicatorPurple : styles.indicatorOrange}`}></div>
                       <div className={styles.scheduleDetails}>
                         <span className={styles.scheduleTitle}>{task.title}</span>
