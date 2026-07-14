@@ -34,6 +34,13 @@ export default function QuizListPage() {
   const [quizDuration, setQuizDuration] = useState("15 mins");
   const [quizDesc, setQuizDesc] = useState("");
 
+  // Custom Toast State
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+  const showToast = (msg: string, type: "success" | "error" | "info" = "success") => {
+    setToast({ message: msg, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (!storedUser) {
@@ -70,7 +77,7 @@ export default function QuizListPage() {
     setShowCreateModal(false);
     setQuizTitle("");
     setQuizDesc("");
-    alert("New quiz created successfully!");
+    showToast(`New quiz "${quizTitle}" published successfully!`, "success");
   };
 
   if (!user) {
@@ -239,6 +246,35 @@ export default function QuizListPage() {
               </div>
             </form>
           </div>
+        </div>
+      )}
+
+      {/* Dynamic Glassmorphic Toast Notification */}
+      {toast && (
+        <div style={{
+          position: "fixed",
+          bottom: "24px",
+          right: "24px",
+          background: "rgba(15, 10, 30, 0.9)",
+          backdropFilter: "blur(12px)",
+          border: "1px solid var(--glass-border)",
+          padding: "1rem 1.5rem",
+          borderRadius: "12px",
+          color: "#ffffff",
+          boxShadow: "0 10px 30px rgba(0,0,0,0.5), inset 0 0 15px rgba(255,255,255,0.05)",
+          display: "flex",
+          alignItems: "center",
+          gap: "12px",
+          zIndex: 2000,
+          animation: "slideIn 0.3s ease forwards"
+        }}>
+          <div style={{
+            width: "8px",
+            height: "8px",
+            borderRadius: "50%",
+            background: toast.type === "success" ? "#22c55e" : toast.type === "error" ? "#ef4444" : "var(--color-orange)"
+          }}></div>
+          <span style={{ fontSize: "0.9rem", fontWeight: "500" }}>{toast.message}</span>
         </div>
       )}
 

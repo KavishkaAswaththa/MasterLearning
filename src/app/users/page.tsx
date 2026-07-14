@@ -26,6 +26,16 @@ export default function UsersDirectoryPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
 
+  // Custom Toast State
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+  const showToast = (msg: string, type: "success" | "error" | "info" = "success") => {
+    setToast({ message: msg, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  // Custom Delete Confirm State
+  const [confirmDeleteEmail, setConfirmDeleteEmail] = useState<string | null>(null);
+
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [newRole, setNewRole] = useState("student");
@@ -57,7 +67,7 @@ export default function UsersDirectoryPage() {
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName.trim() || !newEmail.trim()) {
-      alert("Name and Email are required!");
+      showToast("Name and Email are required!", "error");
       return;
     }
     const success = await registerUser({
@@ -67,7 +77,7 @@ export default function UsersDirectoryPage() {
       password: newPassword
     });
     if (success) {
-      alert("Account created successfully!");
+      showToast(`User ${newName} created successfully!`, "success");
       setShowCreateModal(false);
       setNewName("");
       setNewEmail("");
@@ -90,19 +100,11 @@ export default function UsersDirectoryPage() {
     if (!editingUser) return;
     const success = await updateUserInRegistry(editingUser.email, editName, editRole);
     if (success) {
-      alert("Profile updated successfully!");
+      showToast(`Profile for ${editName} updated!`, "success");
       setShowEditModal(false);
       setEditingUser(null);
       const list = await getUsersRegistry();
       setRegisteredUsers(list);
-    }
-  };
-
-  const handleDeleteUser = async (emailToDelete: string) => {
-    if (confirm(`Are you sure you want to revoke access for ${emailToDelete}?`)) {
-      await deleteUserFromRegistry(emailToDelete);
-      const updated = registeredUsers.filter(u => u.email !== emailToDelete);
-      setRegisteredUsers(updated);
     }
   };
 
@@ -254,7 +256,7 @@ export default function UsersDirectoryPage() {
                             <Edit2 size={12} /> Edit
                           </button>
                           <button 
-                            onClick={() => handleDeleteUser(regUser.email)}
+                            onClick={() => setConfirmDeleteEmail(regUser.email)}
                             style={{ background: "none", border: "none", color: "#ef4444", display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "0.85rem", fontWeight: "bold", cursor: "pointer" }}
                           >
                             <Trash2 size={12} /> Delete
@@ -336,6 +338,69 @@ export default function UsersDirectoryPage() {
             </div>
           </div>
         )}
+
+        {/* Custom Confirmation Modal for Deletion */}
+        {confirmDeleteEmail && (
+          <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1300 }}>
+            <div className="glass-panel" style={{ padding: "2.5rem", width: "100%", maxWidth: "400px", border: "1px solid var(--glass-border)", textAlign: "center" }}>
+              <div style={{ width: "50px", height: "50px", borderRadius: "50%", background: "rgba(239, 68, 68, 0.15)", color: "#ef4444", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1.5rem auto", fontSize: "1.5rem" }}>
+                ⚠️
+              </div>
+              <h2 style={{ fontSize: "1.25rem", fontWeight: "bold", color: "#ffffff", marginBottom: "1rem" }}>Revoke Access Profile</h2>
+              <p style={{ fontSize: "0.88rem", color: "var(--text-secondary)", marginBottom: "2rem", lineHeight: "1.5" }}>
+                Are you sure you want to revoke access parameters for <strong style={{ color: "#ffffff" }}>{confirmDeleteEmail}</strong>? This user will no longer be able to log in.
+              </p>
+              <div style={{ display: "flex", justifyContent: "center", gap: "12px" }}>
+                <button onClick={() => setConfirmDeleteEmail(null)} style={{ padding: "10px 20px", borderRadius: "8px", background: "none", border: "1px solid rgba(255,255,255,0.1)", color: "#ffffff", cursor: "pointer", fontSize: "0.9rem", fontWeight: "bold" }}>
+                  Cancel
+                </button>
+                <button 
+                  onClick={async () => {
+                    const email = confirmDeleteEmail;
+                    setConfirmDeleteEmail(null);
+                    await deleteUserFromRegistry(email);
+                    const updated = registeredUsers.filter(u => u.email !== email);
+                    setRegisteredUsers(updated);
+                    showToast(`Access revoked for ${email} successfully!`, "success");
+                  }} 
+                  style={{ padding: "10px 20px", borderRadius: "8px", background: "#ef4444", border: "none", color: "#ffffff", cursor: "pointer", fontSize: "0.9rem", fontWeight: "bold" }}
+                >
+                  Revoke Access
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Dynamic Glassmorphic Toast Notification */}
+        {toast && (
+          <div style={{
+            position: "fixed",
+            bottom: "24px",
+            right: "24px",
+            background: "rgba(15, 10, 30, 0.9)",
+            backdropFilter: "blur(12px)",
+            border: "1px solid var(--glass-border)",
+            padding: "1rem 1.5rem",
+            borderRadius: "12px",
+            color: "#ffffff",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.5), inset 0 0 15px rgba(255,255,255,0.05)",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            zIndex: 2000,
+            animation: "slideIn 0.3s ease forwards"
+          }}>
+            <div style={{
+              width: "8px",
+              height: "8px",
+              borderRadius: "50%",
+              background: toast.type === "success" ? "#22c55e" : toast.type === "error" ? "#ef4444" : "var(--color-orange)"
+            }}></div>
+            <span style={{ fontSize: "0.9rem", fontWeight: "500" }}>{toast.message}</span>
+          </div>
+        )}
+
       </main>
     </div>
   );
