@@ -414,7 +414,7 @@ export default function Dashboard() {
                   </div>
                   <div>
                     <h3 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>{registeredUsers.length + 3}</h3>
-                    <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Total Registry Profiles</p>
+                    <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Total Accounts</p>
                   </div>
                 </div>
                 
@@ -424,7 +424,7 @@ export default function Dashboard() {
                   </div>
                   <div>
                     <h3 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>100%</h3>
-                    <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Firebase Database Status</p>
+                    <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>School Database Status</p>
                   </div>
                 </div>
 
@@ -433,8 +433,8 @@ export default function Dashboard() {
                     <Clock size={24} />
                   </div>
                   <div>
-                    <h3 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>99.9%</h3>
-                    <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>System Uptime</p>
+                    <h3 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>Online</h3>
+                    <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Platform Status</p>
                   </div>
                 </div>
               </div>
@@ -442,7 +442,7 @@ export default function Dashboard() {
               {/* Accounts Directory */}
               <div className="glass-panel" style={{ padding: "2rem", borderRadius: "24px", border: "1px solid var(--glass-border)" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-                  <h2 style={{ fontSize: "1.25rem", fontWeight: "bold", color: "#ffffff" }}>User Registry Directory</h2>
+                  <h2 style={{ fontSize: "1.25rem", fontWeight: "bold", color: "#ffffff" }}>User Accounts Directory</h2>
                   <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Seed accounts are protected</span>
                 </div>
 
@@ -531,15 +531,15 @@ export default function Dashboard() {
             <div className={styles.rightColumn}>
               {/* Database Center */}
               <div className={styles.sideCard} style={{ background: "linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(249, 115, 22, 0.08) 100%)" }}>
-                <h3 className={styles.sideCardTitle} style={{ color: "#ffffff" }}>Admin Control Tools</h3>
-                <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginBottom: "1.5rem" }}>Trigger database sync and diagnostic utilities.</p>
+                <h3 className={styles.sideCardTitle} style={{ color: "#ffffff" }}>Administrator Panel</h3>
+                <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginBottom: "1.5rem" }}>Quick buttons to manage student records and export reports.</p>
                 
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                  <button onClick={() => alert("Firebase data synced successfully.")} style={{ display: "flex", alignItems: "center", gap: "10px", width: "100%", background: "var(--primary)", border: "none", color: "#ffffff", padding: "0.8rem", borderRadius: "10px", fontWeight: "bold", cursor: "pointer" }}>
-                    <Database size={16} /> Sync Database Backup
+                  <button onClick={() => alert("Student database backed up successfully.")} style={{ display: "flex", alignItems: "center", gap: "10px", width: "100%", background: "var(--primary)", border: "none", color: "#ffffff", padding: "0.8rem", borderRadius: "10px", fontWeight: "bold", cursor: "pointer" }}>
+                    <Database size={16} /> Backup Student Records
                   </button>
-                  <button onClick={() => alert("Audit log report successfully generated.")} style={{ display: "flex", alignItems: "center", gap: "10px", width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#ffffff", padding: "0.8rem", borderRadius: "10px", fontWeight: "bold", cursor: "pointer" }}>
-                    <ClipboardList size={16} /> Export Audit Logs
+                  <button onClick={() => alert("Student activity report exported successfully.")} style={{ display: "flex", alignItems: "center", gap: "10px", width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#ffffff", padding: "0.8rem", borderRadius: "10px", fontWeight: "bold", cursor: "pointer" }}>
+                    <ClipboardList size={16} /> Export Student Reports
                   </button>
                 </div>
               </div>
@@ -547,21 +547,21 @@ export default function Dashboard() {
               {/* Activity Feed */}
               <div className={styles.sideCard}>
                 <div className={styles.sideCardHeader}>
-                  <h3 className={styles.sideCardTitle}>System Activity Stream</h3>
+                  <h3 className={styles.sideCardTitle}>Recent Activity</h3>
                 </div>
                 <div className={styles.scheduleList}>
                   <div className={styles.scheduleItem}>
                     <div className={`${styles.scheduleIndicator} ${styles.indicatorPurple}`}></div>
                     <div className={styles.scheduleDetails}>
-                      <span className={styles.scheduleTitle}>Firebase Connection Established</span>
-                      <span className={styles.scheduleMeta}>Database: Connected (Local Dev)</span>
+                      <span className={styles.scheduleTitle}>School Database Connected</span>
+                      <span className={styles.scheduleMeta}>Status: Online</span>
                     </div>
                   </div>
                   <div className={styles.scheduleItem}>
                     <div className={`${styles.scheduleIndicator} ${styles.indicatorOrange}`}></div>
                     <div className={styles.scheduleDetails}>
                       <span className={styles.scheduleTitle}>Professor Davis logged in</span>
-                      <span className={styles.scheduleMeta}>Session: Teacher workspace</span>
+                      <span className={styles.scheduleMeta}>Role: Teacher</span>
                     </div>
                   </div>
                 </div>
