@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import styles from "../dashboard/page.module.css";
 import Sidebar from "@/components/Sidebar";
 import ProfileSummary from "@/components/ProfileSummary";
-import { Award, Calendar, Shield } from "lucide-react";
+import { Award, Calendar, Shield, AwardIcon, Timer, Zap } from "lucide-react";
 
 export default function ProfilePage() {
   const [user, setUser] = useState<{ email: string; role: string; name: string } | null>(null);
@@ -27,6 +27,16 @@ export default function ProfilePage() {
     );
   }
 
+  // Profile Badges
+  const badgesList = [
+    { title: "First Ascent", desc: "Completed your first diagnostic quiz.", unlock: "Unlocked", active: true },
+    { title: "Math Prodigy", desc: "Scored 85% or higher on an Algebra Quiz.", unlock: "Unlocked", active: true },
+    { title: "Study Streaker", desc: "Maintain a study streak for 7 consecutive days.", unlock: "Unlocked", active: true },
+    { title: "Classroom Guru", desc: "Attended 5 live lessons.", unlock: "Locked", active: false }
+  ];
+
+  const unlockedBadges = badgesList.filter(b => b.active).length;
+
   return (
     <div className={styles.layout}>
       <div className="glow-purple" style={{ top: "10%", left: "20%" }}></div>
@@ -39,6 +49,39 @@ export default function ProfilePage() {
           <div className={styles.greetingSection}>
             <h1>My Profile Workspace</h1>
             <p>Manage your account settings, scores, and active classroom tracks.</p>
+          </div>
+        </div>
+
+        {/* Profile Statistics Row */}
+        <div className={styles.metricsRow} style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1.5rem", marginBottom: "2rem" }}>
+          <div className="glass-card" style={{ padding: "1.5rem", borderRadius: "18px", display: "flex", gap: "1rem", alignItems: "center", border: "1px solid var(--glass-border)" }}>
+            <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "rgba(249, 115, 22, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-orange)" }}>
+              <AwardIcon size={24} />
+            </div>
+            <div>
+              <h3 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>{unlockedBadges} / {badgesList.length}</h3>
+              <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Badges Earned</p>
+            </div>
+          </div>
+          
+          <div className="glass-card" style={{ padding: "1.5rem", borderRadius: "18px", display: "flex", gap: "1rem", alignItems: "center", border: "1px solid var(--glass-border)" }}>
+            <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "rgba(139, 92, 246, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-purple)" }}>
+              <Timer size={24} />
+            </div>
+            <div>
+              <h3 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>18.5 hrs</h3>
+              <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Total Study Time</p>
+            </div>
+          </div>
+
+          <div className="glass-card" style={{ padding: "1.5rem", borderRadius: "18px", display: "flex", gap: "1rem", alignItems: "center", border: "1px solid var(--glass-border)" }}>
+            <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "rgba(34, 197, 94, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#22c55e" }}>
+              <Zap size={24} />
+            </div>
+            <div>
+              <h3 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>Active</h3>
+              <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Security Status</p>
+            </div>
           </div>
         </div>
 
@@ -68,12 +111,7 @@ export default function ProfilePage() {
               </h2>
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem" }}>
-                {[
-                  { title: "First Ascent", desc: "Completed your first diagnostic quiz.", unlock: "Unlocked", active: true },
-                  { title: "Math Prodigy", desc: "Scored 85% or higher on an Algebra Quiz.", unlock: "Unlocked", active: true },
-                  { title: "Study Streaker", desc: "Maintain a study streak for 7 consecutive days.", unlock: "Unlocked", active: true },
-                  { title: "Classroom Guru", desc: "Attended 5 live lessons.", unlock: "Locked", active: false }
-                ].map((item, i) => (
+                {badgesList.map((item, i) => (
                   <div key={i} className="glass-panel-hover" style={{ padding: "1.2rem", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.04)", background: item.active ? "rgba(255,255,255,0.01)" : "rgba(255,255,255,0.002)", opacity: item.active ? 1 : 0.5 }}>
                     <h3 style={{ fontSize: "0.95rem", fontWeight: "bold", color: item.active ? "#ffffff" : "var(--text-muted)", marginBottom: "4px" }}>{item.title}</h3>
                     <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", marginBottom: "8px", minHeight: "36px" }}>{item.desc}</p>

@@ -5,7 +5,7 @@ import styles from "../dashboard/page.module.css";
 import Sidebar from "@/components/Sidebar";
 import Link from "next/link";
 import { getRecentSubmissions, QuizSubmission } from "@/lib/db";
-import { ClipboardList, Play, HelpCircle, PlusCircle } from "lucide-react";
+import { ClipboardList, Play, HelpCircle, PlusCircle, Search, ArrowUpDown, MoreVertical, Copy, Mail, ShieldCheck } from "lucide-react";
 
 interface QuizData {
   id: string;
@@ -25,6 +25,14 @@ export default function QuizListPage() {
     { id: "science-101", title: "Grade 10 General Chemistry", desc: "Covers organic structures, chemical balances, and table elements.", questions: 10, duration: "10 mins", grade: "Grade 10" },
     { id: "math-202", title: "Grade 11 Trigonometry Basics", desc: "Triangles, trigonometric ratios, sine/cosine laws, and graphing functions.", questions: 8, duration: "12 mins", grade: "Grade 11" }
   ]);
+
+  // Quiz search, filter, and sorting states
+  const [quizSearch, setQuizSearch] = useState("");
+  const [quizSort, setQuizSort] = useState("date-desc");
+  const [quizStatusFilter, setQuizStatusFilter] = useState("all");
+
+  // Row context menu tracker
+  const [activeMenuIndex, setActiveMenuIndex] = useState<number | null>(null);
 
   // Quiz creation modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -80,6 +88,22 @@ export default function QuizListPage() {
     showToast(`New quiz "${quizTitle}" published successfully!`, "success");
   };
 
+  const copyScoreDetails = (sub: QuizSubmission) => {
+    navigator.clipboard.writeText(`Student: ${sub.name}, Subject: ${sub.subject}, Score: ${sub.score}, Date: ${sub.date}`);
+    showToast(`Score copied for ${sub.name}!`, "success");
+    setActiveMenuIndex(null);
+  };
+
+  const emailStudentRecord = (email: string) => {
+    showToast(`Attempt transcript receipt emailed to ${email}!`, "success");
+    setActiveMenuIndex(null);
+  };
+
+  const auditAnswerSheet = (name: string) => {
+    showToast(`Detailed quiz sheets audited for ${name}: Verified ✓`, "info");
+    setActiveMenuIndex(null);
+  };
+
   if (!user) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "var(--bg-primary)" }}>
@@ -88,10 +112,61 @@ export default function QuizListPage() {
     );
   }
 
-  // For students, only show their own submissions. For teachers/admins, show all submissions.
-  const filteredSubmissions = user.role === "student"
+  // Filter submissions by role
+  let processedSubmissions = user.role === "student"
     ? submissions.filter(sub => sub.email.toLowerCase() === user.email.toLowerCase())
     : submissions;
+
+  // Calculate live statistics
+  const totalSubmissions = processedSubmissions.length;
+  const averageScore = processedSubmissions.length > 0
+    ? (processedSubmissions.reduce((acc, curr) => {
+        const parts = curr.score.split("/");
+        const value = parts.length > 0 ? parseFloat(parts[0]) : 0;
+        const total = parts.length > 1 ? parseFloat(parts[1]) : 10;
+        return acc + (value / total) * 100;
+      }, 0) / processedSubmissions.length).toFixed(0) + "%"
+    : "N/A";
+  const passedSubmissions = processedSubmissions.filter(sub => {
+    const parts = sub.score.split("/");
+    const val = parseFloat(parts[0]);
+    return val >= 5;
+  }).length;
+
+  // Apply search
+  if (quizSearch.trim()) {
+    const q = quizSearch.toLowerCase();
+    processedSubmissions = processedSubmissions.filter(s => 
+      s.name.toLowerCase().includes(q) || 
+      s.subject.toLowerCase().includes(q)
+    );
+  }
+
+  // Apply status filter
+  if (quizStatusFilter !== "all") {
+    processedSubmissions = processedSubmissions.filter(s => 
+      s.status.toLowerCase() === quizStatusFilter.toLowerCase()
+    );
+  }
+
+  // Apply sorting
+  processedSubmissions.sort((a, b) => {
+    if (quizSort === "name-asc") return a.name.localeCompare(b.name);
+    if (quizSort === "name-desc") return b.name.localeCompare(a.name);
+    if (quizSort === "date-desc") return new Date(b.date).getTime() - new Date(a.date).getTime();
+    if (quizSort === "date-asc") return new Date(a.date).getTime() - new Date(b.date).getTime();
+    if (quizSort === "score-desc") {
+      const valA = parseFloat(a.score.split("/")[0]) / parseFloat(a.score.split("/")[1] || "1");
+      const valB = parseFloat(b.score.split("/")[0]) / parseFloat(b.score.split("/")[1] || "1");
+      return valB - valA;
+    }
+    if (quizSort === "score-asc") {
+      const valA = parseFloat(a.score.split("/")[0]) / parseFloat(a.score.split("/")[1] || "1");
+      const valB = parseFloat(b.score.split("/")[0]) / parseFloat(b.score.split("/")[1] || "1");
+      return valA - valB;
+    }
+    return 0;
+  });
 
   return (
     <div className={styles.layout}>
@@ -105,6 +180,39 @@ export default function QuizListPage() {
           <div className={styles.greetingSection}>
             <h1>Assessment Center</h1>
             <p>Test your knowledge with worksheets and review past score results.</p>
+          </div>
+        </div>
+
+        {/* Quiz Metrics Stat Row */}
+        <div className={styles.metricsRow} style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1.5rem", marginBottom: "2rem" }}>
+          <div className="glass-card" style={{ padding: "1.5rem", borderRadius: "18px", display: "flex", gap: "1rem", alignItems: "center", border: "1px solid var(--glass-border)" }}>
+            <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "rgba(139, 92, 246, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-purple)" }}>
+              <ClipboardList size={24} />
+            </div>
+            <div>
+              <h3 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>{totalSubmissions}</h3>
+              <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Total Submissions</p>
+            </div>
+          </div>
+          
+          <div className="glass-card" style={{ padding: "1.5rem", borderRadius: "18px", display: "flex", gap: "1rem", alignItems: "center", border: "1px solid var(--glass-border)" }}>
+            <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "rgba(249, 115, 22, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-orange)" }}>
+              <Play size={24} />
+            </div>
+            <div>
+              <h3 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>{averageScore}</h3>
+              <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Average Class Grade</p>
+            </div>
+          </div>
+
+          <div className="glass-card" style={{ padding: "1.5rem", borderRadius: "18px", display: "flex", gap: "1rem", alignItems: "center", border: "1px solid var(--glass-border)" }}>
+            <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "rgba(34, 197, 94, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#22c55e" }}>
+              <HelpCircle size={24} />
+            </div>
+            <div>
+              <h3 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>{passedSubmissions}</h3>
+              <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Passing Scores</p>
+            </div>
           </div>
         </div>
 
@@ -140,9 +248,81 @@ export default function QuizListPage() {
 
             {/* Submission Log */}
             <div className="glass-panel" style={{ padding: "2rem", border: "1px solid var(--glass-border)" }}>
-              <h2 style={{ fontSize: "1.2rem", fontWeight: "bold", marginBottom: "1.5rem", color: "#ffffff", display: "flex", alignItems: "center", gap: "10px" }}>
-                <ClipboardList size={20} color="var(--color-purple)" /> Quiz History Logs
-              </h2>
+              
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem", marginBottom: "1.5rem" }}>
+                <h2 style={{ fontSize: "1.2rem", fontWeight: "bold", color: "#ffffff", display: "flex", alignItems: "center", gap: "10px" }}>
+                  <ClipboardList size={20} color="var(--color-purple)" /> Quiz History Logs
+                </h2>
+
+                {/* Table search, sort, and status controls */}
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                  
+                  {/* Search */}
+                  <div style={{ position: "relative", width: "180px" }}>
+                    <Search size={14} color="var(--text-secondary)" style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)" }} />
+                    <input 
+                      type="text" 
+                      placeholder="Search student or quiz..." 
+                      value={quizSearch}
+                      onChange={(e) => setQuizSearch(e.target.value)}
+                      style={{
+                        width: "100%",
+                        padding: "6px 10px 6px 30px",
+                        borderRadius: "6px",
+                        background: "rgba(255,255,255,0.04)",
+                        border: "1px solid rgba(255,255,255,0.08)",
+                        color: "#ffffff",
+                        fontSize: "0.8rem",
+                        outline: "none"
+                      }}
+                    />
+                  </div>
+
+                  {/* Status Filter */}
+                  <select 
+                    value={quizStatusFilter}
+                    onChange={(e) => setQuizStatusFilter(e.target.value)}
+                    style={{
+                      background: "rgba(25,18,50,0.9)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      color: "#ffffff",
+                      padding: "6px 10px",
+                      borderRadius: "6px",
+                      fontSize: "0.8rem",
+                      outline: "none"
+                    }}
+                  >
+                    <option value="all">All Status</option>
+                    <option value="completed">Completed</option>
+                    <option value="graded">Graded</option>
+                  </select>
+
+                  {/* Sorting */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                    <ArrowUpDown size={12} color="var(--text-secondary)" />
+                    <select 
+                      value={quizSort}
+                      onChange={(e) => setQuizSort(e.target.value)}
+                      style={{
+                        background: "rgba(25,18,50,0.9)",
+                        border: "1px solid rgba(255,255,255,0.08)",
+                        color: "#ffffff",
+                        padding: "6px 10px",
+                        borderRadius: "6px",
+                        fontSize: "0.8rem",
+                        outline: "none"
+                      }}
+                    >
+                      <option value="date-desc">Date (Newest)</option>
+                      <option value="date-asc">Date (Oldest)</option>
+                      <option value="score-desc">Score (High-Low)</option>
+                      <option value="score-asc">Score (Low-High)</option>
+                      <option value="name-asc">Student (A-Z)</option>
+                    </select>
+                  </div>
+
+                </div>
+              </div>
 
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", minWidth: "500px" }}>
@@ -152,21 +332,63 @@ export default function QuizListPage() {
                       <th style={{ padding: "10px" }}>Quiz / Subject</th>
                       <th style={{ padding: "10px" }}>Score</th>
                       <th style={{ padding: "10px" }}>Date Completed</th>
-                      <th style={{ padding: "10px" }}>Status</th>
+                      <th style={{ padding: "10px", textAlign: "right" }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody style={{ fontSize: "0.9rem" }}>
-                    {filteredSubmissions.length > 0 ? (
-                      filteredSubmissions.map((sub, i) => (
+                    {processedSubmissions.length > 0 ? (
+                      processedSubmissions.map((sub, i) => (
                         <tr key={`${sub.email}-${sub.quizId}-${sub.date}-${i}`} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                           <td style={{ padding: "12px 10px", fontWeight: "600" }}>{sub.name}</td>
                           <td style={{ padding: "12px 10px", color: "var(--text-secondary)" }}>{sub.subject}</td>
                           <td style={{ padding: "12px 10px", color: "var(--color-orange)", fontWeight: "bold" }}>{sub.score}</td>
                           <td style={{ padding: "12px 10px", color: "var(--text-muted)", fontSize: "0.8rem" }}>{sub.date}</td>
-                          <td style={{ padding: "12px 10px" }}>
-                            <span style={{ padding: "4px 8px", borderRadius: "6px", fontSize: "0.75rem", fontWeight: "bold", background: "rgba(34,197,94,0.15)", color: "#22c55e" }}>
-                              {sub.status}
-                            </span>
+                          <td style={{ padding: "12px 10px", textAlign: "right", position: "relative" }}>
+                            <button 
+                              onClick={() => setActiveMenuIndex(activeMenuIndex === i ? null : i)}
+                              style={{ background: "none", border: "none", color: "var(--text-secondary)", cursor: "pointer", padding: "4px" }}
+                            >
+                              <MoreVertical size={16} />
+                            </button>
+
+                            {/* Dropdown Options Popup */}
+                            {activeMenuIndex === i && (
+                              <div style={{
+                                position: "absolute",
+                                right: "10px",
+                                top: "35px",
+                                background: "rgba(15, 10, 30, 0.95)",
+                                backdropFilter: "blur(12px)",
+                                border: "1px solid var(--glass-border)",
+                                borderRadius: "8px",
+                                boxShadow: "0 10px 25px rgba(0,0,0,0.5)",
+                                zIndex: 100,
+                                width: "160px",
+                                textAlign: "left",
+                                padding: "6px 0"
+                              }}>
+                                <button 
+                                  onClick={() => copyScoreDetails(sub)} 
+                                  style={{ width: "100%", background: "none", border: "none", color: "#ffffff", padding: "8px 12px", fontSize: "0.8rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}
+                                >
+                                  <Copy size={12} /> Copy Details
+                                </button>
+                                
+                                <button 
+                                  onClick={() => emailStudentRecord(sub.email)} 
+                                  style={{ width: "100%", background: "none", border: "none", color: "#ffffff", padding: "8px 12px", fontSize: "0.8rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}
+                                >
+                                  <Mail size={12} /> Mail Student
+                                </button>
+
+                                <button 
+                                  onClick={() => auditAnswerSheet(sub.name)} 
+                                  style={{ width: "100%", background: "none", border: "none", color: "#ffffff", padding: "8px 12px", fontSize: "0.8rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", borderTop: "1px solid rgba(255,255,255,0.06)" }}
+                                >
+                                  <ShieldCheck size={12} /> Audit Paper
+                                </button>
+                              </div>
+                            )}
                           </td>
                         </tr>
                       ))

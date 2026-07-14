@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import styles from "../dashboard/page.module.css";
 import Sidebar from "@/components/Sidebar";
 import CourseCard, { CourseData } from "@/components/CourseCard";
-import { BookOpen } from "lucide-react";
+import { BookOpen, GraduationCap, CheckCircle } from "lucide-react";
 
 export default function CoursesPage() {
   const [user, setUser] = useState<{ email: string; role: string; name: string } | null>(null);
@@ -103,6 +103,11 @@ export default function CoursesPage() {
     return true;
   });
 
+  // Calculate live statistics
+  const totalCourses = mockCourses.length;
+  const averageProgress = (mockCourses.reduce((acc, c) => acc + c.progress, 0) / mockCourses.length).toFixed(0) + "%";
+  const lessonsCompleted = mockCourses.reduce((acc, c) => acc + Math.round((c.progress / 100) * c.lessonsCount), 0);
+
   if (!user) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "var(--bg-primary)" }}>
@@ -140,6 +145,39 @@ export default function CoursesPage() {
           </div>
         </div>
 
+        {/* Dynamic Course Statistics Row */}
+        <div className={styles.metricsRow} style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1.5rem", marginBottom: "2rem" }}>
+          <div className="glass-card" style={{ padding: "1.5rem", borderRadius: "18px", display: "flex", gap: "1rem", alignItems: "center", border: "1px solid var(--glass-border)" }}>
+            <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "rgba(139, 92, 246, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-purple)" }}>
+              <BookOpen size={24} />
+            </div>
+            <div>
+              <h3 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>{totalCourses}</h3>
+              <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Active Courses</p>
+            </div>
+          </div>
+          
+          <div className="glass-card" style={{ padding: "1.5rem", borderRadius: "18px", display: "flex", gap: "1rem", alignItems: "center", border: "1px solid var(--glass-border)" }}>
+            <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "rgba(249, 115, 22, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-orange)" }}>
+              <GraduationCap size={24} />
+            </div>
+            <div>
+              <h3 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>{averageProgress}</h3>
+              <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Average Progress</p>
+            </div>
+          </div>
+
+          <div className="glass-card" style={{ padding: "1.5rem", borderRadius: "18px", display: "flex", gap: "1rem", alignItems: "center", border: "1px solid var(--glass-border)" }}>
+            <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "rgba(34, 197, 94, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#22c55e" }}>
+              <CheckCircle size={24} />
+            </div>
+            <div>
+              <h3 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>{lessonsCompleted}</h3>
+              <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Lessons Finished</p>
+            </div>
+          </div>
+        </div>
+
         <div className="glass-panel" style={{ padding: "2rem", marginBottom: "2rem", border: "1px solid var(--glass-border)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -160,19 +198,13 @@ export default function CoursesPage() {
               ))}
             </div>
           </div>
-        </div>
 
-        {filteredCourses.length > 0 ? (
-          <div className={styles.coursesGrid}>
+          <div className={styles.coursesGrid} style={{ marginTop: "1.5rem" }}>
             {filteredCourses.map((course) => (
               <CourseCard key={course.id} course={course} />
             ))}
           </div>
-        ) : (
-          <div className="glass-panel" style={{ padding: "60px 40px", textAlign: "center", color: "var(--text-secondary)" }}>
-            <p>No subject courses match your filter or search query.</p>
-          </div>
-        )}
+        </div>
       </main>
     </div>
   );

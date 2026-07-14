@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import styles from "../dashboard/page.module.css";
 import Sidebar from "@/components/Sidebar";
-import { GraduationCap, PlayCircle, PlusCircle, Video, X } from "lucide-react";
+import { GraduationCap, PlayCircle, PlusCircle, Video, X, Eye } from "lucide-react";
 
 interface LiveClass {
   id: string;
@@ -139,6 +139,14 @@ export default function ClassroomPage() {
     );
   }
 
+  // Calculate live statistics
+  const totalLive = liveClasses.length;
+  const totalRecorded = recordingLessons.length;
+  const totalVideoViews = recordingLessons.reduce((acc, r) => {
+    const val = parseInt(r.views.split(" ")[0]);
+    return acc + (isNaN(val) ? 0 : val);
+  }, 0);
+
   return (
     <div className={styles.layout}>
       <div className="glow-purple" style={{ top: "10%", left: "20%" }}></div>
@@ -151,6 +159,39 @@ export default function ClassroomPage() {
           <div className={styles.greetingSection}>
             <h1>Virtual Classroom</h1>
             <p>Access live webinars, study lecture streams, and video assignments.</p>
+          </div>
+        </div>
+
+        {/* Dynamic Classroom Metrics Row */}
+        <div className={styles.metricsRow} style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1.5rem", marginBottom: "2rem" }}>
+          <div className="glass-card" style={{ padding: "1.5rem", borderRadius: "18px", display: "flex", gap: "1rem", alignItems: "center", border: "1px solid var(--glass-border)" }}>
+            <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "rgba(249, 115, 22, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-orange)" }}>
+              <Video size={24} />
+            </div>
+            <div>
+              <h3 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>{totalLive}</h3>
+              <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Scheduled Webinars</p>
+            </div>
+          </div>
+          
+          <div className="glass-card" style={{ padding: "1.5rem", borderRadius: "18px", display: "flex", gap: "1rem", alignItems: "center", border: "1px solid var(--glass-border)" }}>
+            <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "rgba(139, 92, 246, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-purple)" }}>
+              <PlayCircle size={24} />
+            </div>
+            <div>
+              <h3 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>{totalRecorded}</h3>
+              <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Recorded Archives</p>
+            </div>
+          </div>
+
+          <div className="glass-card" style={{ padding: "1.5rem", borderRadius: "18px", display: "flex", gap: "1rem", alignItems: "center", border: "1px solid var(--glass-border)" }}>
+            <div style={{ width: "48px", height: "48px", borderRadius: "12px", background: "rgba(34, 197, 94, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#22c55e" }}>
+              <Eye size={24} />
+            </div>
+            <div>
+              <h3 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>{totalVideoViews}</h3>
+              <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Total Video Views</p>
+            </div>
           </div>
         </div>
 

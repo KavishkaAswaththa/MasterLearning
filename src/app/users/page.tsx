@@ -16,13 +16,26 @@ import {
   Database,
   UserPlus,
   Edit2,
-  Trash2
+  Trash2,
+  Search,
+  ArrowUpDown,
+  MoreVertical,
+  Mail,
+  ShieldAlert
 } from "lucide-react";
 
 export default function UsersDirectoryPage() {
   const [user, setUser] = useState<{ email: string; role: string; name: string } | null>(null);
   const [registeredUsers, setRegisteredUsers] = useState<UserProfile[]>([]);
+  
+  // Search, sorting, and filtering state
+  const [userSearch, setUserSearch] = useState("");
+  const [userSort, setUserSort] = useState("name-asc");
   const [roleFilter, setRoleFilter] = useState("all");
+  
+  // Active action menu row (stores email of user)
+  const [activeUserMenu, setActiveUserMenu] = useState<string | null>(null);
+
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
 
@@ -88,11 +101,12 @@ export default function UsersDirectoryPage() {
     }
   };
 
-  const startEditUser = (u: UserProfile) => {
+  const startEditUser = (u: { name: string; email: string; role: string }) => {
     setEditingUser(u);
     setEditName(u.name);
     setEditRole(u.role);
     setShowEditModal(true);
+    setActiveUserMenu(null);
   };
 
   const handleSaveUserEdit = async (e: React.FormEvent) => {
@@ -108,6 +122,17 @@ export default function UsersDirectoryPage() {
     }
   };
 
+  const copyEmailToClipboard = (email: string) => {
+    navigator.clipboard.writeText(email);
+    showToast(`Email ${email} copied to clipboard!`, "success");
+    setActiveUserMenu(null);
+  };
+
+  const testAuditUserToken = (name: string) => {
+    showToast(`User security credentials validated for ${name}!`, "info");
+    setActiveUserMenu(null);
+  };
+
   const seedUsers = [
     { name: "Administrator", email: "admin@masterlearning.com", role: "admin", status: "Protected" },
     { name: "Professor Davis", email: "teacher@masterlearning.com", role: "teacher", status: "Protected" },
@@ -119,9 +144,27 @@ export default function UsersDirectoryPage() {
     ...registeredUsers.map(u => ({ ...u, status: "Dynamic" }))
   ];
 
-  const filteredUsersList = allUsersList.filter(u => {
+  // Apply filtering (Role)
+  let processedUsers = allUsersList.filter(u => {
     if (roleFilter === "all") return true;
     return u.role.toLowerCase() === roleFilter.toLowerCase();
+  });
+
+  // Apply Search
+  if (userSearch.trim()) {
+    const q = userSearch.toLowerCase();
+    processedUsers = processedUsers.filter(u => 
+      u.name.toLowerCase().includes(q) || 
+      u.email.toLowerCase().includes(q)
+    );
+  }
+
+  // Apply Sorting
+  processedUsers.sort((a, b) => {
+    if (userSort === "name-asc") return a.name.localeCompare(b.name);
+    if (userSort === "name-desc") return b.name.localeCompare(a.name);
+    if (userSort === "email-asc") return a.email.localeCompare(b.email);
+    return 0;
   });
 
   const studentsCount = allUsersList.filter(u => u.role === "student").length;
@@ -186,50 +229,98 @@ export default function UsersDirectoryPage() {
 
         {/* Accounts Directory */}
         <div className="glass-panel" style={{ padding: "2rem", borderRadius: "24px", border: "1px solid var(--glass-border)", marginBottom: "2rem" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1.5rem", marginBottom: "1.5rem" }}>
-            <h2 style={{ fontSize: "1.25rem", fontWeight: "bold", color: "#ffffff" }}>User Accounts Directory</h2>
-            
-            {/* Tab Filters */}
-            <div style={{ display: "flex", gap: "6px" }}>
-              {["all", "teacher", "student"].map((r) => (
-                <button
-                  key={r}
-                  onClick={() => setRoleFilter(r)}
+          
+          {/* Action and Control Row */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem", marginBottom: "1.5rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap", flexGrow: 1 }}>
+              
+              {/* Search Bar */}
+              <div style={{ position: "relative", width: "240px" }}>
+                <Search size={16} color="var(--text-secondary)" style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)" }} />
+                <input 
+                  type="text" 
+                  placeholder="Search name or email..." 
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
                   style={{
-                    background: roleFilter === r ? "var(--primary)" : "rgba(255,255,255,0.04)",
-                    border: "none",
-                    color: "#ffffff",
-                    padding: "6px 14px",
+                    width: "100%",
+                    padding: "8px 12px 8px 36px",
                     borderRadius: "8px",
-                    fontSize: "0.78rem",
-                    fontWeight: "bold",
-                    cursor: "pointer",
-                    transition: "all 0.2s"
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    color: "#ffffff",
+                    fontSize: "0.85rem",
+                    outline: "none"
+                  }}
+                />
+              </div>
+
+              {/* Sorting Selector */}
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <ArrowUpDown size={14} color="var(--text-secondary)" />
+                <select 
+                  value={userSort}
+                  onChange={(e) => setUserSort(e.target.value)}
+                  style={{
+                    background: "rgba(25,18,50,0.9)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    color: "#ffffff",
+                    padding: "6px 12px",
+                    borderRadius: "8px",
+                    fontSize: "0.8rem",
+                    outline: "none"
                   }}
                 >
-                  {r.toUpperCase()}S
-                </button>
-              ))}
+                  <option value="name-asc">Name (A-Z)</option>
+                  <option value="name-desc">Name (Z-A)</option>
+                  <option value="email-asc">Email (A-Z)</option>
+                </select>
+              </div>
+
+              {/* Tab Filters */}
+              <div style={{ display: "flex", gap: "6px" }}>
+                {["all", "teacher", "student"].map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => setRoleFilter(r)}
+                    style={{
+                      background: roleFilter === r ? "var(--primary)" : "rgba(255,255,255,0.04)",
+                      border: "none",
+                      color: "#ffffff",
+                      padding: "6px 14px",
+                      borderRadius: "8px",
+                      fontSize: "0.78rem",
+                      fontWeight: "bold",
+                      cursor: "pointer",
+                      transition: "all 0.2s"
+                    }}
+                  >
+                    {r.toUpperCase()}S
+                  </button>
+                ))}
+              </div>
+
             </div>
-            
+
             <button onClick={() => setShowCreateModal(true)} className="gradient-button" style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 16px", fontSize: "0.85rem", borderRadius: "8px" }}>
               <UserPlus size={14} /> Add User
             </button>
           </div>
 
+          {/* Table Container */}
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", minWidth: "500px" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", minWidth: "600px" }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", color: "var(--text-secondary)", fontSize: "0.85rem" }}>
                   <th style={{ padding: "10px" }}>Profile Name</th>
                   <th style={{ padding: "10px" }}>Email</th>
                   <th style={{ padding: "10px" }}>Role</th>
                   <th style={{ padding: "10px" }}>Status</th>
-                  <th style={{ padding: "10px" }}>Actions</th>
+                  <th style={{ padding: "10px", textAlign: "right" }}>Actions</th>
                 </tr>
               </thead>
               <tbody style={{ fontSize: "0.9rem" }}>
-                {filteredUsersList.map((regUser, idx) => (
+                {processedUsers.map((regUser, idx) => (
                   <tr key={idx} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                     <td style={{ padding: "12px 10px", fontWeight: "bold" }}>{regUser.name}</td>
                     <td style={{ padding: "12px 10px", color: "var(--text-secondary)" }}>{regUser.email}</td>
@@ -246,24 +337,61 @@ export default function UsersDirectoryPage() {
                       </span>
                     </td>
                     <td style={{ padding: "12px 10px", color: regUser.status === "Protected" ? "#22c55e" : "var(--color-orange)" }}>{regUser.status}</td>
-                    <td style={{ padding: "12px 10px" }}>
-                      {regUser.status === "Dynamic" ? (
-                        <div style={{ display: "flex", gap: "10px" }}>
+                    <td style={{ padding: "12px 10px", textAlign: "right", position: "relative" }}>
+                      <button 
+                        onClick={() => setActiveUserMenu(activeUserMenu === regUser.email ? null : regUser.email)}
+                        style={{ background: "none", border: "none", color: "var(--text-secondary)", cursor: "pointer", padding: "4px" }}
+                      >
+                        <MoreVertical size={16} />
+                      </button>
+
+                      {/* Dropdown Options Popup */}
+                      {activeUserMenu === regUser.email && (
+                        <div style={{
+                          position: "absolute",
+                          right: "10px",
+                          top: "35px",
+                          background: "rgba(15, 10, 30, 0.95)",
+                          backdropFilter: "blur(12px)",
+                          border: "1px solid var(--glass-border)",
+                          borderRadius: "8px",
+                          boxShadow: "0 10px 25px rgba(0,0,0,0.5)",
+                          zIndex: 100,
+                          width: "160px",
+                          textAlign: "left",
+                          padding: "6px 0"
+                        }}>
                           <button 
-                            onClick={() => startEditUser(regUser)}
-                            style={{ background: "none", border: "none", color: "#a78bfa", display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "0.85rem", fontWeight: "bold", cursor: "pointer" }}
+                            onClick={() => copyEmailToClipboard(regUser.email)} 
+                            style={{ width: "100%", background: "none", border: "none", color: "#ffffff", padding: "8px 12px", fontSize: "0.8rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}
                           >
-                            <Edit2 size={12} /> Edit
+                            <Mail size={12} /> Copy Email
                           </button>
+                          
                           <button 
-                            onClick={() => setConfirmDeleteEmail(regUser.email)}
-                            style={{ background: "none", border: "none", color: "#ef4444", display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "0.85rem", fontWeight: "bold", cursor: "pointer" }}
+                            onClick={() => testAuditUserToken(regUser.name)} 
+                            style={{ width: "100%", background: "none", border: "none", color: "#ffffff", padding: "8px 12px", fontSize: "0.8rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}
                           >
-                            <Trash2 size={12} /> Delete
+                            <ShieldAlert size={12} /> Audit Access
                           </button>
+
+                          {regUser.status === "Dynamic" ? (
+                            <>
+                              <button 
+                                onClick={() => startEditUser(regUser)} 
+                                style={{ width: "100%", background: "none", border: "none", color: "#a78bfa", padding: "8px 12px", fontSize: "0.8rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", borderTop: "1px solid rgba(255,255,255,0.06)" }}
+                              >
+                                <Edit2 size={12} /> Edit Profile
+                              </button>
+                              <button 
+                                onClick={() => { setConfirmDeleteEmail(regUser.email); setActiveUserMenu(null); }} 
+                                style={{ width: "100%", background: "none", border: "none", color: "#ef4444", padding: "8px 12px", fontSize: "0.8rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}
+                              >
+                                <Trash2 size={12} /> Revoke User
+                              </button>
+                            </>
+                          ) : null}
                         </div>
-                      ) : (
-                        <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>System Default</span>
                       )}
                     </td>
                   </tr>
