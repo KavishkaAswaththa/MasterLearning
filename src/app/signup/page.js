@@ -296,24 +296,7 @@ const headerStyle = {
   marginBottom: "32px",
 };
 
-const logoWrapperStyle = {
-  width: "56px",
-  height: "56px",
-  borderRadius: "16px",
-  background: "linear-gradient(135deg, #a855f7 0%, #f97316 100%)",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  marginBottom: "16px",
-  boxShadow: "0 0 20px rgba(168, 85, 247, 0.4)",
-};
 
-const logoStyle = {
-  fontSize: "1.4rem",
-  fontWeight: "800",
-  color: "#ffffff",
-  letterSpacing: "-0.05em",
-};
 
 const titleStyle = {
   fontSize: "1.6rem",
