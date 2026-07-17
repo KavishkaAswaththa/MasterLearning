@@ -575,7 +575,6 @@
   top: 50%;
   transform: translateY(-50%);
   display: flex;
-  justify-space: space-between;
   justify-content: space-between;
   padding: 0 1.5rem;
   z-index: 30;
@@ -1127,6 +1126,7 @@
   padding: 1px;
   background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(249, 115, 22, 0.1));
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   pointer-events: none;
