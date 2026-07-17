@@ -31,7 +31,7 @@ export default function QuizPage({ params }: QuizPageProps) {
     if (typeof window !== "undefined") {
       const user = localStorage.getItem("user");
       if (!user) {
-        window.location.href = "/login?error=auth_required";
+        window.location.replace("/login?error=auth_required");
       }
     }
   }, []);

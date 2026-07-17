@@ -72,7 +72,7 @@ export default function QuizListPage() {
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (!storedUser) {
-      window.location.href = "/login?error=auth_required";
+      window.location.replace("/login?error=auth_required");
       return;
     }
     // eslint-disable-next-line react-hooks/set-state-in-effect

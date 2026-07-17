@@ -61,12 +61,12 @@ export default function UsersDirectoryPage() {
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (!storedUser) {
-      window.location.href = "/login?error=auth_required";
+      window.location.replace("/login?error=auth_required");
       return;
     }
     const parsed = JSON.parse(storedUser);
     if (parsed.role !== "admin") {
-      window.location.href = "/dashboard";
+      window.location.replace("/dashboard");
       return;
     }
     // eslint-disable-next-line react-hooks/set-state-in-effect
