@@ -1060,9 +1060,9 @@ export default function Home() {
         <div className={styles.footerBottom}>
           <p>© {new Date().getFullYear()} MasterLearning E-Learning Hub. All rights reserved.</p>
           <div className={styles.footerBottomLinks}>
-            <a href="#">Terms</a>
-            <a href="#">Privacy</a>
-            <a href="#">Cookies</a>
+            <Link href="/terms">Terms</Link>
+            <Link href="/privacy">Privacy</Link>
+            <Link href="/cookies">Cookies</Link>
           </div>
         </div>
       </footer>
