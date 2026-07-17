@@ -555,9 +555,10 @@ export default function Home() {
 
               {/* Banner 2: Hall of Fame */}
               <div className={styles.bannerCard}>
-                <div className={styles.bannerTextContent}>
+                <img src="/ml_banner_fame.png" alt="XP Leaderboards Banner" className={styles.bannerBg} />
+                <div className={styles.bannerOverlay}>
                   <span className={styles.bannerBadge}>Hall of Fame</span>
-                  <h3 className={styles.bannerTitle} style={{ color: "var(--foreground)" }}>Best Sellers</h3>
+                  <h3 className={styles.bannerTitle}>Top Scholars</h3>
                   <button onClick={() => scrollToSection("about")} className={styles.bannerLinkText}>
                     Check XP Leaderboards <ArrowRight size={16} />
                   </button>
