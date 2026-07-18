@@ -1,4 +1,5 @@
-import { db, storage } from "./firebase";
+import { db, storage, auth } from "./firebase";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { 
   collection, 
@@ -37,14 +38,24 @@ export const SEEDED_USERS: Record<string, UserProfile> = {
 
 // 1. REGISTER USER
 export async function registerUser(profile: UserProfile): Promise<boolean> {
-  // First, try Firestore
+  // First, create the user in ACTUAL Firebase Authentication
+  try {
+    if (profile.password && auth) {
+      await createUserWithEmailAndPassword(auth, profile.email.toLowerCase(), profile.password);
+      console.log("User registered in Firebase Authentication");
+    }
+  } catch (err) {
+    console.warn("Firebase Auth registration failed (you may need to enable Email/Password provider in Console):", err);
+  }
+
+  // Second, save the public profile data to Firestore
   try {
     const userDocRef = doc(db, "users", profile.email.toLowerCase());
     await setDoc(userDocRef, {
       name: profile.name,
       email: profile.email.toLowerCase(),
       role: profile.role,
-      password: profile.password
+      password: profile.password // Kept for backwards compatibility with your mock fallback
     });
     console.log("User successfully saved to Firestore");
   } catch (err) {
@@ -55,7 +66,6 @@ export async function registerUser(profile: UserProfile): Promise<boolean> {
   if (typeof window !== "undefined") {
     const stored = localStorage.getItem("registered_users");
     const list: UserProfile[] = stored ? JSON.parse(stored) : [];
-    // Prevent duplicate emails in localStorage fallback list
     const filtered = list.filter(u => u.email.toLowerCase() !== profile.email.toLowerCase());
     filtered.push(profile);
     localStorage.setItem("registered_users", JSON.stringify(filtered));
@@ -74,7 +84,17 @@ export async function authenticateUser(email: string, password: string): Promise
     return rest;
   }
 
-  // B. Try Firestore
+  // B. Try actual Firebase Authentication
+  try {
+    if (auth) {
+      await signInWithEmailAndPassword(auth, normEmail, password);
+      console.log("Signed in successfully via Firebase Auth");
+    }
+  } catch (err) {
+    console.warn("Firebase Auth login failed, checking Firestore fallback:", err);
+  }
+
+  // C. Try Firestore Profile Check
   try {
     const userDocRef = doc(db, "users", normEmail);
     const snap = await getDoc(userDocRef);
@@ -92,7 +112,7 @@ export async function authenticateUser(email: string, password: string): Promise
     console.warn("Firestore authentication failed, falling back to localStorage:", err);
   }
 
-  // C. Fallback to localStorage
+  // D. Fallback to localStorage
   if (typeof window !== "undefined") {
     const stored = localStorage.getItem("registered_users");
     if (stored) {

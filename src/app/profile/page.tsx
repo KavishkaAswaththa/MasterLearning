@@ -4,13 +4,47 @@ import React, { useState, useEffect } from "react";
 import styles from "../dashboard/page.module.css";
 import Sidebar from "@/components/Sidebar";
 import ProfileSummary from "@/components/ProfileSummary";
-import { Award, Calendar, Shield, AwardIcon, Timer, Zap } from "lucide-react";
+import { Award, Calendar, Shield, AwardIcon, Timer, Zap, Camera } from "lucide-react";
 
-import { getRecentSubmissions, QuizSubmission } from "@/lib/db";
+import { getRecentSubmissions, QuizSubmission, uploadFileToStorage, updateUserProfile } from "@/lib/db";
 
 export default function ProfilePage() {
   const [user, setUser] = useState<{ email: string; role: string; name: string; photoURL?: string } | null>(null);
   const [submissions, setSubmissions] = useState<QuizSubmission[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    
+    try {
+      setIsUploading(true);
+      // Upload to Firebase Storage
+      const path = `profiles/${user.email}_${file.name}`;
+      const url = await uploadFileToStorage(path, file);
+      
+      // Update Firestore profile
+      await updateUserProfile(user.email, user.name, url);
+      
+      // Update local state and fallback
+      const updatedUser = { ...user, photoURL: url };
+      setUser(updatedUser);
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      
+      const stored = localStorage.getItem("registered_users");
+      if (stored) {
+        const list = JSON.parse(stored);
+        const updatedList = list.map((u: any) => u.email === user.email ? { ...u, photoURL: url } : u);
+        localStorage.setItem("registered_users", JSON.stringify(updatedList));
+      }
+    } catch (err) {
+      console.error("Error uploading profile image:", err);
+      alert("Failed to upload image. Ensure you are signed in properly.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -121,13 +155,27 @@ export default function ProfilePage() {
           <div className={styles.leftColumn}>
             {/* Profile Overview Card */}
             <div className="glass-panel" style={{ padding: "2.5rem", marginBottom: "2rem", border: "1px solid var(--glass-border)", display: "flex", alignItems: "center", gap: "2rem", flexWrap: "wrap" }}>
-              <div style={{ width: "90px", height: "90px", borderRadius: "24px", background: "var(--gradient-primary)", display: "flex", alignItems: "center", justifyContent: "center", color: "#ffffff", fontSize: "2.5rem", fontWeight: "800", boxShadow: "0 8px 24px rgba(139,92,246,0.3)", overflow: "hidden" }}>
+              <div 
+                onClick={() => fileInputRef.current?.click()}
+                style={{ width: "90px", height: "90px", borderRadius: "24px", background: "var(--gradient-primary)", display: "flex", alignItems: "center", justifyContent: "center", color: "#ffffff", fontSize: "2.5rem", fontWeight: "800", boxShadow: "0 8px 24px rgba(139,92,246,0.3)", overflow: "hidden", cursor: "pointer", position: "relative", opacity: isUploading ? 0.5 : 1 }}
+                title="Click to upload profile picture"
+              >
                 {user.photoURL ? (
                   <img src={user.photoURL} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 ) : (
                   user.name.charAt(0).toUpperCase()
                 )}
+                <div style={{ position: "absolute", bottom: 0, width: "100%", height: "30%", background: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                  <Camera size={16} />
+                </div>
               </div>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleImageUpload} 
+                accept="image/*" 
+                style={{ display: "none" }} 
+              />
               <div>
                 <h2 style={{ fontSize: "1.5rem", fontWeight: "800", color: "#ffffff", marginBottom: "6px" }}>{user.name}</h2>
                 <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center" }}>
