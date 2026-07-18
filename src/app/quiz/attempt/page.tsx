@@ -1,19 +1,16 @@
 "use client";
 
-import React, { use, useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Quiz } from "@/data/quizzes";
 import { QuizTimer } from "@/components/QuizTimer";
 import { submitQuizResult, getQuizTemplates } from "@/lib/db";
 import styles from "./quiz.module.css";
 
-interface QuizPageProps {
-  params: Promise<{ quizId: string }>;
-}
-
-export default function QuizPage({ params }: QuizPageProps) {
-  const resolvedParams = use(params);
-  const quizId = resolvedParams.quizId;
+function QuizPageContent() {
+  const searchParams = useSearchParams();
+  const quizId = searchParams.get("id") || "science-101";
 
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [allQuizzes, setAllQuizzes] = useState<Quiz[]>([]);
@@ -66,7 +63,7 @@ export default function QuizPage({ params }: QuizPageProps) {
           <p style={{ marginBottom: "1rem", color: "#9ca3af" }}>Available Assessments:</p>
           <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", justifyContent: "center" }}>
             {allQuizzes.map((q) => (
-              <Link key={q.id} href={`/quiz/${q.id}`} className={styles.backButton}>
+              <Link key={q.id} href={`/quiz/attempt?id=${q.id}`} className={styles.backButton}>
                 {q.subject} - {q.title}
               </Link>
             ))}
@@ -405,5 +402,18 @@ export default function QuizPage({ params }: QuizPageProps) {
         )}
       </div>
     </div>
+  );
+}
+
+export default function QuizPage() {
+  return (
+    <Suspense fallback={
+      <div className={styles.loadingContainer}>
+        <div className={styles.spinner}></div>
+        <p className={styles.errorText}>Loading assessment portal...</p>
+      </div>
+    }>
+      <QuizPageContent />
+    </Suspense>
   );
 }
