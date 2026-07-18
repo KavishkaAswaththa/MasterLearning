@@ -2,8 +2,9 @@
 
 import React, { use, useEffect, useState } from "react";
 import Link from "next/link";
-import { sampleQuizzes } from "@/data/quizzes";
+import { Quiz } from "@/data/quizzes";
 import { QuizTimer } from "@/components/QuizTimer";
+import { submitQuizResult, getQuizTemplates } from "@/lib/db";
 import styles from "./quiz.module.css";
 
 interface QuizPageProps {
@@ -14,7 +15,9 @@ export default function QuizPage({ params }: QuizPageProps) {
   const resolvedParams = use(params);
   const quizId = resolvedParams.quizId;
 
-  const quiz = sampleQuizzes.find((q) => q.id === quizId);
+  const [quiz, setQuiz] = useState<Quiz | null>(null);
+  const [allQuizzes, setAllQuizzes] = useState<Quiz[]>([]);
+  const [loadingQuiz, setLoadingQuiz] = useState(true);
 
   // States
   const [answers, setAnswers] = useState<Record<string, number>>({});
@@ -27,9 +30,23 @@ export default function QuizPage({ params }: QuizPageProps) {
 
   useEffect(() => {
     setIsMounted(true);
-  }, []);
+    if (typeof window !== "undefined") {
+      const user = localStorage.getItem("user");
+      if (!user) {
+        window.location.replace("/login?error=auth_required");
+        return;
+      }
+    }
 
-  if (!isMounted) {
+    getQuizTemplates().then((list) => {
+      setAllQuizzes(list);
+      const found = list.find((q) => q.id === quizId);
+      setQuiz(found || null);
+      setLoadingQuiz(false);
+    });
+  }, [quizId]);
+
+  if (!isMounted || loadingQuiz) {
     return (
       <div className={styles.loadingContainer}>
         <div className={styles.spinner}></div>
@@ -47,8 +64,8 @@ export default function QuizPage({ params }: QuizPageProps) {
         </p>
         <div style={{ marginTop: "1.5rem" }}>
           <p style={{ marginBottom: "1rem", color: "#9ca3af" }}>Available Assessments:</p>
-          <div style={{ display: "flex", gap: "1rem" }}>
-            {sampleQuizzes.map((q) => (
+          <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", justifyContent: "center" }}>
+            {allQuizzes.map((q) => (
               <Link key={q.id} href={`/quiz/${q.id}`} className={styles.backButton}>
                 {q.subject} - {q.title}
               </Link>
@@ -86,6 +103,25 @@ export default function QuizPage({ params }: QuizPageProps) {
     setTimeTaken(cappedElapsed);
     setSubmitted(true);
     setShowConfirmModal(false);
+
+    // Save dynamic submission to the unified database
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("user");
+      if (stored) {
+        const u = JSON.parse(stored);
+        const percentScore = `${Math.round((correctCount / quiz.questions.length) * 100)}%`;
+        
+        submitQuizResult({
+          name: u.name,
+          email: u.email,
+          quizId: quiz.id,
+          subject: `${quiz.subject} - ${quiz.title}`,
+          score: percentScore,
+          date: new Date().toISOString().replace("T", " ").substring(0, 16),
+          status: "Approved"
+        });
+      }
+    }
   };
 
   const handleManualSubmit = () => {

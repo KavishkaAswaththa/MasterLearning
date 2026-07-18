@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+import { authenticateUser } from "@/lib/db";
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -18,8 +20,15 @@ export default function LoginPage() {
       const params = new URLSearchParams(window.location.search);
       if (params.get("registered") === "true") {
         setSuccess("Account created successfully! You can now log in.");
+      } else if (params.get("error") === "auth_required") {
+        setError("Please log in to your account to access dashboard resources or take quizzes.");
       }
     }
+
+    // Seed Firestore database on mount
+    import("@/lib/db").then(({ seedDatabase }) => {
+      seedDatabase();
+    });
   }, []);
 
   const handleLogin = async (e) => {
@@ -47,12 +56,20 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      // Simulate API call for auth
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const matchedUser = await authenticateUser(email, password);
+
+      if (!matchedUser) {
+        throw new Error("Invalid credentials");
+      }
+
+      localStorage.setItem("user", JSON.stringify({
+        email: matchedUser.email,
+        role: matchedUser.role,
+        name: matchedUser.name
+      }));
+
+      setSuccess(`Login successful! Redirecting to ${matchedUser.role} dashboard...`);
       
-      setSuccess("Login successful! Redirecting to dashboard...");
-      
-      // Simulate redirecting to dashboard
       setTimeout(() => {
         router.push("/dashboard");
       }, 1000);
@@ -70,12 +87,12 @@ export default function LoginPage() {
       <div className="glass-card" style={cardStyle}>
         {/* Portal Branding */}
         <div style={headerStyle}>
-          <div style={logoWrapperStyle}>
-            <span style={logoStyle}>ML</span>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", marginBottom: "20px" }}>
+            <div className="logo-icon-auth">ML</div>
+            <span className="logo-text-auth">
+              Master<span className="logo-highlight-auth">Learning</span>
+            </span>
           </div>
-          <h1 style={titleStyle}>
-            Welcome Back to <span className="gradient-text">MasterLearning</span>
-          </h1>
           <p style={subtitleStyle}>Enter your credentials to access your classroom</p>
         </div>
 
@@ -211,32 +228,7 @@ const headerStyle = {
   marginBottom: "32px",
 };
 
-const logoWrapperStyle = {
-  width: "56px",
-  height: "56px",
-  borderRadius: "16px",
-  background: "linear-gradient(135deg, #a855f7 0%, #f97316 100%)",
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  marginBottom: "16px",
-  boxShadow: "0 0 20px rgba(168, 85, 247, 0.4)",
-};
 
-const logoStyle = {
-  fontSize: "1.4rem",
-  fontWeight: "800",
-  color: "#ffffff",
-  letterSpacing: "-0.05em",
-};
-
-const titleStyle = {
-  fontSize: "1.6rem",
-  fontWeight: "800",
-  marginBottom: "8px",
-  letterSpacing: "-0.02em",
-  color: "#ffffff",
-};
 
 const subtitleStyle = {
   fontSize: "0.9rem",

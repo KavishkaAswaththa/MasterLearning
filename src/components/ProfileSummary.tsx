@@ -12,13 +12,20 @@ interface BadgeReward {
 }
 
 export default function ProfileSummary() {
+  const [user, setUser] = useState<{ name: string; role: string; email: string } | null>(null);
   const [xp, setXp] = useState(0);
   const targetXp = 2450;
   const level = 12;
   const nextLevelXp = 3000;
   
-  // Animate progress bar fill on load
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("user");
+      if (stored) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setUser(JSON.parse(stored));
+      }
+    }
     const timer = setTimeout(() => {
       setXp(targetXp);
     }, 100);
@@ -77,17 +84,24 @@ export default function ProfileSummary() {
 
   const xpPercent = Math.min((xp / nextLevelXp) * 100, 100);
 
+  const getInitials = (nameStr: string) => {
+    if (!nameStr) return "ST";
+    const parts = nameStr.trim().split(" ");
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
+
   return (
     <div className={styles.profileCard}>
       <div className={styles.header}>
         <div className={styles.avatarContainer}>
-          <div className={styles.avatarInner}>NP</div>
+          <div className={styles.avatarInner}>{user ? getInitials(user.name) : "ST"}</div>
           <div className={styles.glowRing}></div>
         </div>
         <div className={styles.details}>
-          <h2 className={styles.name}>Nishadi Perera</h2>
+          <h2 className={styles.name}>{user ? user.name : "Portal Student"}</h2>
           <div className={styles.meta}>
-            <span>Grade 11 Student</span>
+            <span style={{ textTransform: "capitalize" }}>{user ? `${user.role} workspace` : "Student"}</span>
             <span className={styles.badge}>PRO</span>
           </div>
         </div>
@@ -98,26 +112,20 @@ export default function ProfileSummary() {
           <span className={styles.levelText}>Level {level}</span>
           <span className={styles.xpText}>{xp} / {nextLevelXp} XP to Lvl {level + 1}</span>
         </div>
-        <div className={styles.progressBarTrack}>
-          <div 
-            className={styles.progressBarFill} 
-            style={{ width: `${xpPercent}%` }}
-          ></div>
+        <div className={styles.progressBar}>
+          <div className={styles.progressFill} style={{ width: `${xpPercent}%` }}></div>
         </div>
       </div>
 
-      <div className={styles.rewardsSection}>
-        <h3 className={styles.rewardsTitle}>Recent Accomplishments</h3>
-        <div className={styles.badgeGrid}>
+      <div className={styles.badgesSection}>
+        <h3 className={styles.badgesTitle}>My Badges ({badges.length})</h3>
+        <div className={styles.badgesList}>
           {badges.map((badge) => (
-            <div key={badge.id} className={styles.rewardBadge}>
-              <div className={`${styles.badgeIcon} ${badge.themeClass}`}>
-                {badge.icon}
-              </div>
-              <span className={styles.badgeName}>{badge.name}</span>
-              <div className={styles.tooltip}>
-                <strong>{badge.name}</strong>
-                <p style={{ marginTop: "4px" }}>{badge.description}</p>
+            <div key={badge.id} className={`${styles.badgeItem} ${badge.themeClass}`} title={badge.description}>
+              <div className={styles.badgeIcon}>{badge.icon}</div>
+              <div className={styles.badgeInfo}>
+                <h4 className={styles.badgeName}>{badge.name}</h4>
+                <p className={styles.badgeDesc}>{badge.description}</p>
               </div>
             </div>
           ))}

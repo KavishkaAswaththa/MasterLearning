@@ -1,14 +1,29 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import styles from "./Sidebar.module.css";
 
 interface SidebarProps {
   activeTab?: string;
-  onTabChange?: (tab: string) => void;
 }
 
-export default function Sidebar({ activeTab = "dashboard", onTabChange }: SidebarProps) {
+export default function Sidebar({ activeTab = "dashboard" }: SidebarProps) {
+  const [user] = React.useState<{ name: string; role: string; email?: string; photoURL?: string } | null>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("user");
+      return stored ? JSON.parse(stored) : { name: "Nishadi Perera", role: "student" };
+    }
+    return null;
+  });
+
+  const handleLogout = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("user");
+      window.location.href = "/login";
+    }
+  };
+
   const menuItems = [
     {
       id: "dashboard",
@@ -22,6 +37,20 @@ export default function Sidebar({ activeTab = "dashboard", onTabChange }: Sideba
         </svg>
       )
     },
+    ...(user && user.role === "admin" ? [
+      {
+        id: "users",
+        label: "Users",
+        icon: (
+          <svg className={styles.navIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+        )
+      }
+    ] : []),
     {
       id: "courses",
       label: "Courses",
@@ -82,27 +111,25 @@ export default function Sidebar({ activeTab = "dashboard", onTabChange }: Sideba
   return (
     <aside className={styles.sidebar}>
       <div className={styles.logoContainer}>
-        <div className={styles.logoIcon}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
-            <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5" />
-          </svg>
-        </div>
-        <span className={`${styles.logoText} gradient-text`}>MasterLearning</span>
+        <div className={styles.logoIcon}>ML</div>
+        <span className={styles.logoText}>
+          Master<span className={styles.logoHighlight}>Learning</span>
+        </span>
       </div>
 
       <nav className={styles.navSection}>
         {menuItems.map((item) => {
           const isActive = activeTab === item.id;
+          const href = item.id === "dashboard" ? "/dashboard" : `/${item.id}`;
           return (
-            <div
+            <Link
               key={item.id}
+              href={href}
               className={`${styles.navItem} ${isActive ? styles.activeNavItem : ""}`}
-              onClick={() => onTabChange && onTabChange(item.id)}
             >
               {item.icon}
               <span className={styles.labelText}>{item.label}</span>
-            </div>
+            </Link>
           );
         })}
       </nav>
@@ -110,15 +137,23 @@ export default function Sidebar({ activeTab = "dashboard", onTabChange }: Sideba
       <div className={styles.footerSection}>
         <div className={styles.userCard}>
           <div className={styles.avatar}>
-            <div className={styles.avatarInner}>N</div>
+            <div className={styles.avatarInner} style={{ overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {user && user.photoURL ? (
+                <img src={user.photoURL} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              ) : (
+                user ? user.name.charAt(0).toUpperCase() : "N"
+              )}
+            </div>
           </div>
           <div className={styles.userInfo}>
-            <span className={styles.userName}>Nishadi Perera</span>
-            <span className={styles.userRole}>Student (Grade 11)</span>
+            <span className={styles.userName}>{user ? user.name : "Nishadi Perera"}</span>
+            <span className={styles.userRole}>
+              {user ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "Student"}
+            </span>
           </div>
         </div>
 
-        <button className={styles.logoutButton}>
+        <button className={styles.logoutButton} onClick={handleLogout}>
           <svg className={styles.logoutIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
             <polyline points="16 17 21 12 16 7" />
