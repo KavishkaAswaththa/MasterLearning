@@ -4,7 +4,8 @@ import React, { useState, useEffect } from "react";
 import styles from "../dashboard/page.module.css";
 import Sidebar from "@/components/Sidebar";
 import Link from "next/link";
-import { getRecentSubmissions, QuizSubmission } from "@/lib/db";
+import { getRecentSubmissions, QuizSubmission, getQuizTemplates, saveQuizTemplate } from "@/lib/db";
+import { Quiz } from "@/data/quizzes";
 import { ClipboardList, Play, HelpCircle, PlusCircle, Search, ArrowUpDown, MoreVertical, Copy, Mail, ShieldCheck } from "lucide-react";
 
 interface QuizData {
@@ -15,6 +16,17 @@ interface QuizData {
   duration: string;
   grade: string;
 }
+
+const mapQuizToQuizData = (q: Quiz): QuizData => {
+  return {
+    id: q.id,
+    title: q.title,
+    desc: q.description,
+    questions: q.questions.length,
+    duration: `${Math.round(q.durationSeconds / 60)} mins`,
+    grade: q.grade
+  };
+};
 
 const parseScoreToPercentage = (scoreStr: string): number => {
   if (!scoreStr) return 0;
@@ -41,10 +53,7 @@ export default function QuizListPage() {
   const [submissions, setSubmissions] = useState<QuizSubmission[]>([]);
 
   // State for dynamic quizzes list
-  const [availableQuizzes, setAvailableQuizzes] = useState<QuizData[]>([
-    { id: "science-101", title: "Grade 10 General Chemistry", desc: "Covers organic structures, chemical balances, and table elements.", questions: 10, duration: "10 mins", grade: "Grade 10" },
-    { id: "math-202", title: "Grade 11 Trigonometry Basics", desc: "Triangles, trigonometric ratios, sine/cosine laws, and graphing functions.", questions: 8, duration: "12 mins", grade: "Grade 11" }
-  ]);
+  const [availableQuizzes, setAvailableQuizzes] = useState<QuizData[]>([]);
 
   // Quiz search, filter, and sorting states
   const [quizSearch, setQuizSearch] = useState("");
@@ -82,26 +91,48 @@ export default function QuizListPage() {
       setSubmissions(list);
     });
 
+    getQuizTemplates().then((list) => {
+      setAvailableQuizzes(list.map(mapQuizToQuizData));
+    });
+
     const params = new URLSearchParams(window.location.search);
     if (params.get("action") === "create") {
       setShowCreateModal(true);
     }
   }, []);
 
-  const handleCreateQuiz = (e: React.FormEvent) => {
+  const handleCreateQuiz = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!quizTitle.trim()) return;
 
-    const newQuiz: QuizData = {
+    const parsedDuration = parseFloat(quizDuration) || 15;
+
+    // Generate mock questions matching the requested count so it's fully playable!
+    const mockQuestions = Array.from({ length: Number(quizQuestions) }).map((_, idx) => ({
+      id: `q-${idx + 1}`,
+      text: `Question ${idx + 1}: Dynamic assessment challenge for ${quizTitle}. Which option is correct?`,
+      options: ["Correct Option", "Alternative Option A", "Alternative Option B", "Alternative Option C"],
+      correctOptionIndex: 0,
+      explanation: `Correct Option is correct as it is the dynamically seeded target answer for ${quizTitle}.`
+    }));
+
+    const newQuiz: Quiz = {
       id: quizTitle.toLowerCase().replace(/[^a-z0-9]/g, "-"),
       title: quizTitle,
+      subject: quizGrade.includes("Math") ? "Mathematics" : "Science",
+      durationSeconds: parsedDuration * 60,
+      description: quizDesc || "No description provided.",
       grade: quizGrade,
-      questions: Number(quizQuestions),
-      duration: quizDuration,
-      desc: quizDesc || "No description provided."
+      questions: mockQuestions
     };
 
-    setAvailableQuizzes([newQuiz, ...availableQuizzes]);
+    // Save to unified database
+    await saveQuizTemplate(newQuiz);
+
+    // Refresh templates list
+    const updated = await getQuizTemplates();
+    setAvailableQuizzes(updated.map(mapQuizToQuizData));
+
     setShowCreateModal(false);
     setQuizTitle("");
     setQuizDesc("");

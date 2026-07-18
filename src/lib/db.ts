@@ -7,6 +7,7 @@ import {
   getDocs, 
   deleteDoc
 } from "firebase/firestore";
+import { Quiz, sampleQuizzes } from "@/data/quizzes";
 
 export interface UserProfile {
   name: string;
@@ -251,4 +252,60 @@ export async function getRecentSubmissions(): Promise<QuizSubmission[]> {
     { name: "Kavishka Aswaththa", email: "student@masterlearning.com", quizId: "science-101", subject: "Grade 10 Science Quiz", score: "90%", date: "2026-07-14 16:12", status: "Approved" },
     { name: "Nishadi Perera", email: "nishadi@gmail.com", quizId: "math-202", subject: "Grade 11 Pure Mathematics", score: "80%", date: "2026-07-14 13:45", status: "Approved" }
   ];
+}
+
+// 7. SAVE QUIZ TEMPLATE
+export async function saveQuizTemplate(quiz: Quiz): Promise<boolean> {
+  // A. Try Firestore
+  try {
+    const docRef = doc(db, "quizzes", quiz.id);
+    await setDoc(docRef, quiz);
+    console.log("Quiz template saved to Firestore");
+  } catch (err) {
+    console.warn("Firestore saveQuizTemplate failed, falling back to localStorage:", err);
+  }
+
+  // B. Fallback to localStorage
+  if (typeof window !== "undefined") {
+    const stored = localStorage.getItem("quizzes");
+    const list: Quiz[] = stored ? JSON.parse(stored) : [];
+    const updated = list.filter(q => q.id !== quiz.id);
+    updated.unshift(quiz);
+    localStorage.setItem("quizzes", JSON.stringify(updated));
+  }
+  return true;
+}
+
+// 8. GET ALL QUIZ TEMPLATES
+export async function getQuizTemplates(): Promise<Quiz[]> {
+  const list: Quiz[] = [];
+
+  // A. Try Firestore
+  try {
+    const querySnapshot = await getDocs(collection(db, "quizzes"));
+    querySnapshot.forEach((docSnap) => {
+      list.push(docSnap.data() as Quiz);
+    });
+    if (list.length > 0) {
+      return list;
+    }
+  } catch (err) {
+    console.warn("Firestore fetch quizzes failed, falling back to localStorage:", err);
+  }
+
+  // B. Fallback to localStorage
+  if (typeof window !== "undefined") {
+    const stored = localStorage.getItem("quizzes");
+    if (stored) {
+      const parsed = JSON.parse(stored) as Quiz[];
+      if (parsed.length > 0) {
+        return parsed;
+      }
+    }
+    
+    // Seed localStorage on first load so user has data
+    localStorage.setItem("quizzes", JSON.stringify(sampleQuizzes));
+  }
+
+  return sampleQuizzes;
 }
