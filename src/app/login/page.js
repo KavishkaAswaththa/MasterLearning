@@ -24,6 +24,11 @@ export default function LoginPage() {
         setError("Please log in to your account to access dashboard resources or take quizzes.");
       }
     }
+
+    // Seed Firestore database on mount
+    import("@/lib/db").then(({ seedDatabase }) => {
+      seedDatabase();
+    });
   }, []);
 
   const handleLogin = async (e) => {

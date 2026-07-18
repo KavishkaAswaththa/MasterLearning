@@ -309,3 +309,44 @@ export async function getQuizTemplates(): Promise<Quiz[]> {
 
   return sampleQuizzes;
 }
+
+// 9. SEED DATABASE
+export async function seedDatabase(): Promise<boolean> {
+  try {
+    // A. Seed default users
+    for (const [email, profile] of Object.entries(SEEDED_USERS)) {
+      const userDocRef = doc(db, "users", email);
+      await setDoc(userDocRef, {
+        name: profile.name,
+        email: profile.email.toLowerCase(),
+        role: profile.role,
+        password: profile.password
+      }, { merge: true });
+    }
+    console.log("Seeded default users to Firestore successfully.");
+
+    // B. Seed default quizzes
+    for (const quiz of sampleQuizzes) {
+      const quizDocRef = doc(db, "quizzes", quiz.id);
+      await setDoc(quizDocRef, quiz, { merge: true });
+    }
+    console.log("Seeded default quizzes to Firestore successfully.");
+
+    // C. Seed default submissions
+    const defaultSubmissions: QuizSubmission[] = [
+      { name: "Kavishka Aswaththa", email: "student@masterlearning.com", quizId: "science-101", subject: "Science - Grade 10 - Introduction to General Science", score: "90%", date: "2026-07-14 16:12", status: "Approved" },
+      { name: "Nishadi Perera", email: "nishadi@gmail.com", quizId: "math-202", subject: "Mathematics - Grade 11 - Quadratic Equations & Trigonometry", score: "80%", date: "2026-07-14 13:45", status: "Approved" }
+    ];
+
+    for (const sub of defaultSubmissions) {
+      const id = `seeded_${sub.email.replace(/[^a-zA-Z0-9]/g, "_")}_${sub.quizId}`;
+      const docRef = doc(db, "submissions", id);
+      await setDoc(docRef, sub, { merge: true });
+    }
+    console.log("Seeded default submissions to Firestore successfully.");
+    return true;
+  } catch (err) {
+    console.error("Error seeding Firestore database:", err);
+    return false;
+  }
+}

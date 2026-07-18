@@ -150,6 +150,13 @@ export default function Home() {
     };
   }, []);
 
+  // Automatic Firestore database seeding on mount
+  useEffect(() => {
+    import("@/lib/db").then(({ seedDatabase }) => {
+      seedDatabase();
+    });
+  }, []);
+
   const scrollToSection = (sectionId: string) => {
     setMobileMenuOpen(false);
     const element = document.getElementById(sectionId);
