@@ -44,3 +44,9 @@ next-env.d.ts
 # academic files
 project_guidelines.md
 report.md
+
+# agent files
+AGENTS.md
+CLAUDE.md
+agent.md
+claude.md
