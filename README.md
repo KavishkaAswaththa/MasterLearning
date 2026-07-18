@@ -1,44 +1,61 @@
-# 🌟 MasterLearning LMS — Interactive E-Learning & Cloud Sandbox Platform
+# MasterLearning LMS - Interactive E-Learning & Cloud Sandbox Platform
 
-Welcome to **MasterLearning**! 🚀 This is a premium, cloud-native Learning Management System (LMS) designed to deliver a modern, fluid, and highly scalable educational experience. 
+Welcome to MasterLearning! This is a premium, cloud-native Learning Management System (LMS) designed to deliver a modern, fluid, and highly scalable educational experience.
 
-MasterLearning features a stunning, state-of-the-art **liquid glassmorphism user interface** (built on Next.js) and operates a fully decoupled, **serverless backend architecture** utilizing Google Cloud Firebase services. It is engineered from the ground up to demonstrate cloud elasticity, virtualized hosting, distributed database patterns, and robust CI/CD automation pipelines.
+MasterLearning features a stunning, state-of-the-art liquid glassmorphism user interface (built on Next.js) and operates a fully decoupled, serverless backend architecture utilizing Google Cloud Firebase services. It is engineered from the ground up to demonstrate cloud elasticity, virtualized hosting, distributed database patterns, and robust CI/CD automation pipelines.
 
 ---
 
-## 📖 1. What is MasterLearning? (The Big Picture)
+## 1. What is MasterLearning? (The Big Picture)
 
-Educational websites suffer from **extreme traffic volatility**. During normal school weeks, usage is low; but during exams, registrations, or assignment deadlines, traffic spikes by thousands of users instantly. 
+Educational websites suffer from extreme traffic volatility. During normal school weeks, usage is low; but during exams, registrations, or assignment deadlines, traffic spikes by thousands of users instantly.
 
-MasterLearning solves this by deploying as a **JAMstack application**:
+MasterLearning solves this by deploying as a JAMstack application:
 * **Static Serving**: The Next.js frontend compiles entirely to static assets served globally from CDN edge nodes via Firebase Hosting. This guarantees sub-second page loads with zero runtime server costs.
 * **Serverless Scale**: Database queries and user actions are handled on-demand by serverless API collections, automatically scaling internal resource threads from zero to thousands of parallel transactions.
-* **Dual-Engine Offline Fallback**: To prevent lockouts during network drops or API limits, our custom database wrapper (`src/lib/db.ts`) runs a smart **cache-aside sync pipeline**. If Firestore is offline, records are written locally in the browser's `localStorage` and dynamically merged back when access is restored.
+* **Dual-Engine Offline Fallback**: To prevent lockouts during network drops or API limits, our custom database wrapper (`src/lib/db.ts`) runs a smart cache-aside sync pipeline. If Firestore is offline, records are written locally in the browser's `localStorage` and dynamically merged back when access is restored.
 
 ---
 
-## 👥 2. User Roles & Workspace Personas
+## 2. Project Directory Structure
+
+Here is a guide to the files and directories in this repository:
+
+* **src/**: Main application source code.
+  * **app/**: Next.js App Router pages (login, dashboard, quiz attempts, registry lists, profiles).
+  * **components/**: Reusable React interface blocks (CookieConsent, StatsCards, QuizTimer).
+  * **lib/**: Database connections and transaction wrappers (db.ts, firebase.ts).
+  * **data/**: Base mock quiz structures (quizzes.ts).
+* **scripts/**: Node database seeder utilities (seed.js).
+* **.github/workflows/**: CI/CD automation configurations (main.yml).
+* **report.tex**: Complete academic group project documentation.
+* **Dockerfile**: Configuration for Nginx container execution.
+* **firebase.json**: Web frameworks routing configurations for Firebase Hosting.
+
+---
+
+## 3. User Roles & Workspace Personas
 
 MasterLearning tailors views dynamically depending on who logs in:
 
-1. **🎓 Student Workspace**
-   * **Dashboard**: Displays live statistical aggregates (tests completed, average scores) compiled dynamically from database submissions.
+1. Student Workspace
+   * **Dashboard**: Displays live statistical aggregates (quizzes completed, average scores) compiled dynamically from database submissions.
    * **Course Catalogue**: Browsable syllabus list. Clicking cards opens detailed topic modals, download links for worksheets, and lesson entryways.
    * **Assessment Taker**: Timed quiz module with active countdown timers and answers verification.
    * **Webinar Lounge**: Live webinar emulator with active group chat feeds.
 
-2. **👩‍🏫 Teacher Workspace**
+2. Teacher Workspace
    * **Interactive Quiz Creator**: Lets teachers design new assessments, set correct options indices, and publish them instantly.
    * **Submissions Audit Table**: Clean list showing student quiz submissions, test dates, and scores with email receipt actions.
    * **Media Manager**: Allows teachers to upload recorded lecture streams or PDF handouts.
 
-3. **🛠️ Administrator Workspace**
+3. Administrator Workspace
    * **User Registry Directory**: A dashboard showing all registered accounts. Admins can inline edit names, roles, or delete users instantly.
    * **Database Seeding Tool**: A recovery utility that initializes default courses, quizzes, and simulated scores with one click.
 
 ---
 
-## 📊 3. Database Entity Relationship (ER) Diagram
+## 4. Database Entity Relationship (ER) Diagram
 
 The system operates across six primary Firestore collections. The relationships, primary/foreign keys, and data scopes are defined below:
 
@@ -109,12 +126,12 @@ erDiagram
 
 ---
 
-## 🛠️ 4. Local Installation & Setup Guide
+## 5. Local Installation & Setup Guide
 
-### 4.1 Prerequisites
-Ensure you have [Node.js v20+](https://nodejs.org/) and [Git](https://git-scm.com/) installed on your machine.
+### 5.1 Prerequisites
+Ensure you have Node.js v20+ and Git installed on your machine.
 
-### 4.2 Installation Steps
+### 5.2 Installation Steps
 
 1. **Clone the Repository**:
    ```bash
@@ -155,9 +172,9 @@ Ensure you have [Node.js v20+](https://nodejs.org/) and [Git](https://git-scm.co
 
 ---
 
-## 🚀 5. Automated CI/CD Deployment Workflow
+## 6. Automated CI/CD Deployment Workflow
 
-Every push to the `main` or `master` branch triggers our GitHub Actions pipeline (`.github/workflows/main.yml`) to automatically compile and deploy the application:
+Every push to the main or master branch triggers our GitHub Actions pipeline (`.github/workflows/main.yml`) to automatically compile and deploy the application:
 
 ```mermaid
 graph TD
@@ -176,7 +193,7 @@ graph TD
 
 ---
 
-## 📦 6. Docker Virtualization
+## 7. Docker Virtualization
 
 You can run the entire static application in a lightweight container using our multi-stage `Dockerfile`:
 
@@ -190,7 +207,7 @@ docker run -p 80:80 masterlearning
 
 ---
 
-## 🔑 7. Default Login Credentials
+## 8. Default Login Credentials
 
 Use these seeded test accounts to sign in and test the different roles on the platform:
 
@@ -199,7 +216,3 @@ Use these seeded test accounts to sign in and test the different roles on the pl
 | **Administrator** | `admin@masterlearning.com` | `password123` |
 | **Teacher** | `teacher@masterlearning.com` | `password123` |
 | **Student** | `student@masterlearning.com` | `password123` |
-
----
-
-Made with ❤️ by the Faculty of Computer Science and Engineering.
