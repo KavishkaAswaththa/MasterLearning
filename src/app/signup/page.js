@@ -17,6 +17,58 @@ export default function SignupPage() {
   const [success, setSuccess] = useState("");
   const [role, setRole] = useState("student");
 
+  const [passwordStrength, setPasswordStrength] = useState({
+    score: 0,
+    label: "None",
+    color: "rgba(255,255,255,0.2)",
+    checks: {
+      minLen: false,
+      upper: false,
+      numSym: false
+    }
+  });
+
+  const isEmailValid = (val) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(val);
+  };
+
+  const handlePasswordChange = (val) => {
+    setPassword(val);
+    const minLen = val.length >= 6;
+    const upper = /[A-Z]/.test(val);
+    const numSym = /[0-9!@#$%^&*(),.?":{}|<>]/.test(val);
+    
+    let score = 0;
+    if (val.length > 0) {
+      if (minLen) score++;
+      if (upper) score++;
+      if (numSym) score++;
+    }
+    
+    let label = "None";
+    let color = "rgba(255,255,255,0.2)";
+    if (val.length > 0) {
+      if (score === 1) {
+        label = "Weak";
+        color = "#f87171"; // Light red
+      } else if (score === 2) {
+        label = "Medium";
+        color = "#fb923c"; // Light orange
+      } else if (score === 3) {
+        label = "Strong";
+        color = "#4ade80"; // Light green
+      }
+    }
+    
+    setPasswordStrength({
+      score,
+      label,
+      color,
+      checks: { minLen, upper, numSym }
+    });
+  };
+
   const handleSignup = async (e) => {
     e.preventDefault();
     setError("");
@@ -28,14 +80,13 @@ export default function SignupPage() {
       return;
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!isEmailValid(email)) {
       setError("Please enter a valid email address.");
       return;
     }
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters long.");
+    if (passwordStrength.score < 2) {
+      setError("Please choose a stronger password (must meet at least 2 strength requirements).");
       return;
     }
 
@@ -148,13 +199,18 @@ export default function SignupPage() {
               <input
                 id="email"
                 type="email"
-                className={`form-input ${error && !email ? "input-error" : ""}`}
+                className={`form-input ${error && (!email || !isEmailValid(email)) ? "input-error" : ""}`}
                 placeholder="student@masterlearning.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isLoading}
               />
             </div>
+            {email.length > 0 && !isEmailValid(email) && (
+              <span style={{ fontSize: "0.72rem", color: "#f87171", marginTop: "4px" }}>
+                Please enter a valid email format (e.g. name@example.com)
+              </span>
+            )}
           </div>
 
           <div className="form-group">
@@ -169,10 +225,10 @@ export default function SignupPage() {
               <input
                 id="password"
                 type={showPassword ? "text" : "password"}
-                className={`form-input ${error && !password ? "input-error" : ""}`}
+                className={`form-input ${error && (!password || passwordStrength.score < 2) ? "input-error" : ""}`}
                 placeholder="At least 6 characters"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => handlePasswordChange(e.target.value)}
                 disabled={isLoading}
               />
               <button
@@ -194,6 +250,46 @@ export default function SignupPage() {
                 )}
               </button>
             </div>
+            {password.length > 0 && (
+              <div style={{ marginTop: "10px", width: "100%", display: "flex", flexDirection: "column", gap: "8px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: "0.75rem", color: "var(--foreground-muted)" }}>Password Strength:</span>
+                  <span style={{ fontSize: "0.75rem", fontWeight: "bold", color: passwordStrength.color }}>
+                    {passwordStrength.label}
+                  </span>
+                </div>
+                
+                <div style={{ display: "flex", gap: "4px", width: "100%", height: "4px" }}>
+                  {[1, 2, 3].map((step) => (
+                    <div
+                      key={step}
+                      style={{
+                        flex: 1,
+                        height: "100%",
+                        borderRadius: "2px",
+                        backgroundColor: step <= passwordStrength.score ? passwordStrength.color : "rgba(255,255,255,0.06)",
+                        transition: "background-color 0.3s ease"
+                      }}
+                    />
+                  ))}
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginTop: "4px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.75rem", color: passwordStrength.checks.minLen ? "#4ade80" : "var(--foreground-muted)" }}>
+                    <span>{passwordStrength.checks.minLen ? "✓" : "○"}</span>
+                    <span>At least 6 characters</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.75rem", color: passwordStrength.checks.upper ? "#4ade80" : "var(--foreground-muted)" }}>
+                    <span>{passwordStrength.checks.upper ? "✓" : "○"}</span>
+                    <span>Contains an uppercase letter</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.75rem", color: passwordStrength.checks.numSym ? "#4ade80" : "var(--foreground-muted)" }}>
+                    <span>{passwordStrength.checks.numSym ? "✓" : "○"}</span>
+                    <span>Contains a number or symbol</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="form-group">
@@ -208,13 +304,19 @@ export default function SignupPage() {
               <input
                 id="confirmPassword"
                 type={showPassword ? "text" : "password"}
-                className={`form-input ${error && !confirmPassword ? "input-error" : ""}`}
+                className={`form-input ${error && password !== confirmPassword ? "input-error" : ""}`}
                 placeholder="Re-enter your password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 disabled={isLoading}
               />
             </div>
+            {confirmPassword.length > 0 && (
+              <div style={{ marginTop: "6px", display: "flex", alignItems: "center", gap: "6px", fontSize: "0.75rem", color: password === confirmPassword ? "#4ade80" : "#f87171" }}>
+                <span>{password === confirmPassword ? "✓" : "✗"}</span>
+                <span>{password === confirmPassword ? "Passwords match" : "Passwords do not match"}</span>
+              </div>
+            )}
           </div>
 
           <div className="form-group">
