@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import styles from "../app/quiz/[quizId]/quiz.module.css";
+import styles from "../app/quiz/attempt/quiz.module.css";
 
 interface QuizTimerProps {
   durationSeconds: number;

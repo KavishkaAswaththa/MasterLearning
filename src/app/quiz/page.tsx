@@ -312,7 +312,7 @@ export default function QuizListPage() {
                       <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: "1.4" }}>{quiz.desc}</p>
                     </div>
                     <div>
-                      <Link href={`/quiz/${quiz.id}`} className="gradient-button" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none", fontSize: "0.9rem", borderRadius: "8px", padding: "10px 20px" }}>
+                      <Link href={`/quiz/attempt?id=${quiz.id}`} className="gradient-button" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none", fontSize: "0.9rem", borderRadius: "8px", padding: "10px 20px" }}>
                         <Play size={14} fill="currentColor" /> Start Quiz
                       </Link>
                     </div>
