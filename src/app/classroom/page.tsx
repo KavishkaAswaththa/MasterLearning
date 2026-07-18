@@ -144,6 +144,10 @@ export default function ClassroomPage() {
   const handleUploadVideo = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!videoTitle.trim()) return;
+    if (videoFile && videoFile.size > 50 * 1024 * 1024) {
+      showToast("Video file is too large! Maximum allowed size is 50MB.", "error");
+      return;
+    }
     try {
       setIsUploadingVideo(true);
       let storageUrl = "";

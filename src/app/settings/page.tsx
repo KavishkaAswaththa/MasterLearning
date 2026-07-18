@@ -39,6 +39,10 @@ export default function SettingsPage() {
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
+    if (file.size > 2 * 1024 * 1024) {
+      showToast("File is too large! Profile picture must be under 2MB.", "error");
+      return;
+    }
     try {
       setIsUploading(true);
       const url = await uploadFileToStorage(`profile_pictures/${user.email}.png`, file);
