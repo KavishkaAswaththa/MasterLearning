@@ -1,0 +1,62 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to verify if the user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // USERS Collection
+    match /users/{email} {
+      // Users can only read and write their own profile
+      allow read, write: if isAuthenticated() && request.auth.token.email == email;
+      
+      // Admins can read and modify anyone's profile
+      allow read, write: if isAuthenticated() && request.auth.token.role == "admin";
+    }
+
+    // COURSES Collection
+    match /courses/{courseId} {
+      // Anyone logged in can read the course list
+      allow read: if isAuthenticated();
+      
+      // Only Teachers and Admins can create or modify courses
+      allow write: if isAuthenticated() && (request.auth.token.role == "teacher" || request.auth.token.role == "admin");
+    }
+
+    // QUIZZES Collection
+    match /quizzes/{quizId} {
+      // Students can read quizzes, but only if they are marked as 'published'
+      allow read: if isAuthenticated() && resource.data.published == true;
+      
+      // Teachers and Admins have full access to read, create, and delete quizzes
+      allow read, write: if isAuthenticated() && (request.auth.token.role == "teacher" || request.auth.token.role == "admin");
+    }
+
+    // SUBMISSIONS Collection
+    match /submissions/{submissionId} {
+      // Students can only write (submit) and read their own quiz results
+      allow create: if isAuthenticated() && request.resource.data.email == request.auth.token.email;
+      allow read: if isAuthenticated() && resource.data.email == request.auth.token.email;
+      
+      // Students CANNOT alter a submission after it is created
+      allow update, delete: if false; 
+      
+      // Teachers and Admins can view and grade all submissions
+      allow read, write: if isAuthenticated() && (request.auth.token.role == "teacher" || request.auth.token.role == "admin");
+    }
+
+    // LIVE CLASSES & RECORDED LESSONS
+    match /live_classes/{classId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && (request.auth.token.role == "teacher" || request.auth.token.role == "admin");
+    }
+
+    match /recorded_lessons/{lessonId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && (request.auth.token.role == "teacher" || request.auth.token.role == "admin");
+    }
+  }
+}

@@ -1,0 +1,27 @@
+rules_version = '2';
+
+// Craft rules based on the provided request...
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper function to verify if the user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Media & PDF Syllabus Files
+    match /materials/{allPaths=**} {
+      // Anyone logged into the LMS can read/download the course materials
+      allow read: if isAuthenticated();
+      
+      // Only Teachers and Admins can upload new course materials
+      allow write: if isAuthenticated() && (request.auth.token.role == "teacher" || request.auth.token.role == "admin");
+    }
+
+    // User Profile Pictures
+    match /profiles/{allPaths=**} {
+      // Allow users to upload and view profile pictures
+      allow read, write: if isAuthenticated();
+    }
+  }
+}
