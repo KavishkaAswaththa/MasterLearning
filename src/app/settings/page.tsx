@@ -5,6 +5,8 @@ import styles from "../dashboard/page.module.css";
 import Sidebar from "@/components/Sidebar";
 import { Save, Lock, User, Bell } from "lucide-react";
 
+import { updateUserProfile, updateUserPassword } from "@/lib/db";
+
 export default function SettingsPage() {
   const [user, setUser] = useState<{ email: string; role: string; name: string } | null>(null);
   const [displayName, setDisplayName] = useState("");
@@ -31,17 +33,19 @@ export default function SettingsPage() {
     setDisplayName(parsed.name);
   }, []);
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    await updateUserProfile(user.email, displayName);
     const updatedUser = { ...user, name: displayName };
     localStorage.setItem("user", JSON.stringify(updatedUser));
     setUser(updatedUser);
     showToast("Profile settings saved successfully!", "success");
   };
 
-  const handleChangePassword = (e: React.FormEvent) => {
+  const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
     if (password !== confirmPassword) {
       showToast("Passwords do not match!", "error");
       return;
@@ -50,6 +54,7 @@ export default function SettingsPage() {
       showToast("Password must be at least 6 characters long.", "error");
       return;
     }
+    await updateUserPassword(user.email, password);
     showToast("Password updated successfully!", "success");
     setPassword("");
     setConfirmPassword("");

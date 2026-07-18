@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import styles from "../dashboard/page.module.css";
 import Sidebar from "@/components/Sidebar";
 import { GraduationCap, PlayCircle, PlusCircle, Video, X, Eye } from "lucide-react";
+import { getLiveClasses, saveLiveClass, getRecordedLessons, saveRecordedLesson } from "@/lib/db";
 
 interface LiveClass {
   id: string;
@@ -25,16 +26,8 @@ export default function ClassroomPage() {
   const [user, setUser] = useState<{ email: string; role: string; name: string } | null>(null);
 
   // Classroom dynamic states
-  const [liveClasses, setLiveClasses] = useState<LiveClass[]>([
-    { id: "1", title: "Newtonian Physics Live Lesson", teacher: "Professor Davis", time: "Tomorrow, 9:00 AM", duration: "60 mins" },
-    { id: "2", title: "Trigonometry Masterclass", teacher: "Madame Nishadi", time: "July 16, 2:00 PM", duration: "45 mins" }
-  ]);
-
-  const [recordingLessons, setRecordingLessons] = useState<RecordedLesson[]>([
-    { id: "rec_1", title: "Chapter 1: Intro to Gravitation", category: "Physics", views: "142 views", time: "3 days ago" },
-    { id: "rec_2", title: "Chapter 3: Alkanes & Chemical Bonds", category: "Chemistry", views: "98 views", time: "1 week ago" },
-    { id: "rec_3", title: "Chapter 2: Quadratic Equations Basics", category: "Mathematics", views: "210 views", time: "2 weeks ago" }
-  ]);
+  const [liveClasses, setLiveClasses] = useState<LiveClass[]>([]);
+  const [recordingLessons, setRecordingLessons] = useState<RecordedLesson[]>([]);
 
   // Modal flags
   const [activeStream, setActiveStream] = useState<{ title: string; teacher?: string; isLive: boolean } | null>(null);
@@ -77,6 +70,9 @@ export default function ClassroomPage() {
     }
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setUser(JSON.parse(storedUser));
+
+    getLiveClasses().then((list) => setLiveClasses(list));
+    getRecordedLessons().then((list) => setRecordingLessons(list));
 
     const params = new URLSearchParams(window.location.search);
     if (params.get("action") === "upload") {
@@ -125,7 +121,7 @@ export default function ClassroomPage() {
     };
   }, [activeStream]);
 
-  const handleCreateLive = (e: React.FormEvent) => {
+  const handleCreateLive = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!liveTitle.trim()) return;
     const newClass: LiveClass = {
@@ -135,13 +131,14 @@ export default function ClassroomPage() {
       time: liveTime,
       duration: liveDuration
     };
+    await saveLiveClass(newClass);
     setLiveClasses([newClass, ...liveClasses]);
     setShowCreateLiveModal(false);
     setLiveTitle("");
     showToast("Live lecture scheduled successfully!", "success");
   };
 
-  const handleUploadVideo = (e: React.FormEvent) => {
+  const handleUploadVideo = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!videoTitle.trim()) return;
     const newVideo: RecordedLesson = {
@@ -151,6 +148,7 @@ export default function ClassroomPage() {
       views: "0 views",
       time: "Just now"
     };
+    await saveRecordedLesson(newVideo);
     setRecordingLessons([newVideo, ...recordingLessons]);
     setShowUploadModal(false);
     setVideoTitle("");

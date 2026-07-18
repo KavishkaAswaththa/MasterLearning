@@ -6,8 +6,11 @@ import Sidebar from "@/components/Sidebar";
 import CourseCard, { CourseData } from "@/components/CourseCard";
 import { BookOpen, GraduationCap, CheckCircle, X } from "lucide-react";
 
+import { getCoursesList } from "@/lib/db";
+
 export default function CoursesPage() {
   const [user, setUser] = useState<{ email: string; role: string; name: string } | null>(null);
+  const [courses, setCourses] = useState<CourseData[]>([]);
   const [filter, setFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   
@@ -23,6 +26,10 @@ export default function CoursesPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setUser(JSON.parse(storedUser));
 
+    getCoursesList().then((list) => {
+      setCourses(list);
+    });
+
     const params = new URLSearchParams(window.location.search);
     const searchVal = params.get("search");
     if (searchVal) {
@@ -30,65 +37,7 @@ export default function CoursesPage() {
     }
   }, []);
 
-  const mockCourses: CourseData[] = [
-    {
-      id: "math-11",
-      title: "Grade 11 Pure Mathematics",
-      description: "Explore trigonometry, quadratic equations, and complex numbers with worksheets and online tests.",
-      grade: "Grade 11",
-      lessonsCount: 30,
-      quizzesCount: 8,
-      duration: "15",
-      progress: 80,
-      iconType: "math"
-    },
-    {
-      id: "physics-11",
-      title: "Grade 11 Newtonian Mechanics",
-      description: "Master laws of motion, gravitation, energy, and momentum through video lectures and simulations.",
-      grade: "Grade 11",
-      lessonsCount: 24,
-      quizzesCount: 6,
-      duration: "12",
-      progress: 65,
-      iconType: "physics"
-    },
-    {
-      id: "chemistry-11",
-      title: "Grade 11 Organic Chemistry",
-      description: "Understand carbon compounds, chemical bonding, and molecular interactions with interactive notes.",
-      grade: "Grade 11",
-      lessonsCount: 20,
-      quizzesCount: 5,
-      duration: "10",
-      progress: 30,
-      iconType: "chemistry"
-    },
-    {
-      id: "it-11",
-      title: "Grade 11 Programming Concepts",
-      description: "An introduction to algorithms, variables, logic gates, and software engineering principles.",
-      grade: "Grade 11",
-      lessonsCount: 16,
-      quizzesCount: 4,
-      duration: "8",
-      progress: 0,
-      iconType: "it"
-    },
-    {
-      id: "english-11",
-      title: "Grade 11 English Literature",
-      description: "Critical analysis of poetry, drama, and prose, with written assignments and vocab quizzes.",
-      grade: "Grade 11",
-      lessonsCount: 12,
-      quizzesCount: 3,
-      duration: "6",
-      progress: 15,
-      iconType: "english"
-    }
-  ];
-
-  const filteredCourses = mockCourses.filter((course) => {
+  const filteredCourses = courses.filter((course) => {
     if (filter === "science") {
       if (course.iconType !== "physics" && course.iconType !== "chemistry") return false;
     } else if (filter === "math" && course.iconType !== "math") {
@@ -107,9 +56,11 @@ export default function CoursesPage() {
   });
 
   // Calculate live statistics
-  const totalCourses = mockCourses.length;
-  const averageProgress = (mockCourses.reduce((acc, c) => acc + c.progress, 0) / mockCourses.length).toFixed(0) + "%";
-  const lessonsCompleted = mockCourses.reduce((acc, c) => acc + Math.round((c.progress / 100) * c.lessonsCount), 0);
+  const totalCourses = courses.length;
+  const averageProgress = courses.length > 0
+    ? (courses.reduce((acc, c) => acc + c.progress, 0) / courses.length).toFixed(0) + "%"
+    : "0%";
+  const lessonsCompleted = courses.reduce((acc, c) => acc + Math.round((c.progress / 100) * c.lessonsCount), 0);
 
   if (!user) {
     return (

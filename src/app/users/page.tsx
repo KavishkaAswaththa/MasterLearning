@@ -150,16 +150,12 @@ export default function UsersDirectoryPage() {
     setActiveUserMenu(null);
   };
 
-  const seedUsers = [
-    { name: "Administrator", email: "admin@masterlearning.com", role: "admin", status: "Protected" },
-    { name: "Professor Davis", email: "teacher@masterlearning.com", role: "teacher", status: "Protected" },
-    { name: "Kavishka Aswaththa", email: "student@masterlearning.com", role: "student", status: "Protected" }
-  ];
-
-  const allUsersList = [
-    ...seedUsers,
-    ...registeredUsers.map(u => ({ ...u, status: "Dynamic" }))
-  ];
+  const protectedEmails = ["admin@masterlearning.com", "teacher@masterlearning.com", "student@masterlearning.com"];
+  
+  const allUsersList = registeredUsers.map(u => ({
+    ...u,
+    status: protectedEmails.includes(u.email.toLowerCase()) ? "Protected" : "Dynamic"
+  }));
 
   // Apply filtering (Role)
   let processedUsers = allUsersList.filter(u => {

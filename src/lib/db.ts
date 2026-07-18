@@ -344,9 +344,247 @@ export async function seedDatabase(): Promise<boolean> {
       await setDoc(docRef, sub, { merge: true });
     }
     console.log("Seeded default submissions to Firestore successfully.");
+
+    // D. Seed default courses
+    const defaultCourses = [
+      { id: "math-11", title: "Grade 11 Pure Mathematics", description: "Explore trigonometry, quadratic equations, and complex numbers with worksheets and online tests.", grade: "Grade 11", lessonsCount: 30, quizzesCount: 8, duration: "15", progress: 80, iconType: "math" },
+      { id: "physics-11", title: "Grade 11 Newtonian Mechanics", description: "Master laws of motion, gravitation, energy, and momentum through video lectures and simulations.", grade: "Grade 11", lessonsCount: 24, quizzesCount: 6, duration: "12", progress: 65, iconType: "physics" },
+      { id: "chemistry-11", title: "Grade 11 Organic Chemistry", description: "Understand carbon compounds, chemical bonding, and molecular interactions with interactive notes.", grade: "Grade 11", lessonsCount: 20, quizzesCount: 5, duration: "10", progress: 30, iconType: "chemistry" },
+      { id: "it-11", title: "Grade 11 Programming Concepts", description: "An introduction to algorithms, variables, logic gates, and software engineering principles.", grade: "Grade 11", lessonsCount: 16, quizzesCount: 4, duration: "8", progress: 0, iconType: "it" },
+      { id: "english-11", title: "Grade 11 English Literature", description: "Critical analysis of poetry, drama, and prose, with written assignments and vocab quizzes.", grade: "Grade 11", lessonsCount: 12, quizzesCount: 3, duration: "6", progress: 15, iconType: "english" }
+    ];
+    for (const course of defaultCourses) {
+      const docRef = doc(db, "courses", course.id);
+      await setDoc(docRef, course, { merge: true });
+    }
+
+    // E. Seed default live classes
+    const defaultLiveClasses = [
+      { id: "1", title: "Newtonian Physics Live Lesson", teacher: "Professor Davis", time: "Tomorrow, 9:00 AM", duration: "60 mins" },
+      { id: "2", title: "Trigonometry Masterclass", teacher: "Madame Nishadi", time: "July 16, 2:00 PM", duration: "45 mins" }
+    ];
+    for (const item of defaultLiveClasses) {
+      const docRef = doc(db, "live_classes", item.id);
+      await setDoc(docRef, item, { merge: true });
+    }
+
+    // F. Seed default recorded lessons
+    const defaultRecorded = [
+      { id: "rec_1", title: "Chapter 1: Intro to Gravitation", category: "Physics", views: "142 views", time: "3 days ago" },
+      { id: "rec_2", title: "Chapter 3: Alkanes & Chemical Bonds", category: "Chemistry", views: "98 views", time: "1 week ago" },
+      { id: "rec_3", title: "Chapter 2: Quadratic Equations Basics", category: "Mathematics", views: "210 views", time: "2 weeks ago" }
+    ];
+    for (const item of defaultRecorded) {
+      const docRef = doc(db, "recorded_lessons", item.id);
+      await setDoc(docRef, item, { merge: true });
+    }
+
     return true;
   } catch (err) {
     console.error("Error seeding Firestore database:", err);
     return false;
   }
+}
+
+export interface CourseData {
+  id: string;
+  title: string;
+  description: string;
+  grade: string;
+  lessonsCount: number;
+  quizzesCount: number;
+  duration: string;
+  progress: number;
+  iconType: "math" | "science" | "it" | "english" | "physics" | "chemistry";
+}
+
+export interface LiveClass {
+  id: string;
+  title: string;
+  teacher: string;
+  time: string;
+  duration: string;
+}
+
+export interface RecordedLesson {
+  id: string;
+  title: string;
+  category: string;
+  views: string;
+  time: string;
+}
+
+// 10. GET COURSES LIST
+export async function getCoursesList(): Promise<CourseData[]> {
+  const list: CourseData[] = [];
+  try {
+    const snap = await getDocs(collection(db, "courses"));
+    snap.forEach((docSnap) => {
+      list.push(docSnap.data() as CourseData);
+    });
+    if (list.length > 0) return list;
+  } catch (err) {
+    console.warn("Firestore getCoursesList failed, falling back to localStorage:", err);
+  }
+
+  if (typeof window !== "undefined") {
+    const stored = localStorage.getItem("courses");
+    if (stored) return JSON.parse(stored) as CourseData[];
+    
+    const defaultCourses: CourseData[] = [
+      { id: "math-11", title: "Grade 11 Pure Mathematics", description: "Explore trigonometry, quadratic equations, and complex numbers with worksheets and online tests.", grade: "Grade 11", lessonsCount: 30, quizzesCount: 8, duration: "15", progress: 80, iconType: "math" },
+      { id: "physics-11", title: "Grade 11 Newtonian Mechanics", description: "Master laws of motion, gravitation, energy, and momentum through video lectures and simulations.", grade: "Grade 11", lessonsCount: 24, quizzesCount: 6, duration: "12", progress: 65, iconType: "physics" },
+      { id: "chemistry-11", title: "Grade 11 Organic Chemistry", description: "Understand carbon compounds, chemical bonding, and molecular interactions with interactive notes.", grade: "Grade 11", lessonsCount: 20, quizzesCount: 5, duration: "10", progress: 30, iconType: "chemistry" },
+      { id: "it-11", title: "Grade 11 Programming Concepts", description: "An introduction to algorithms, variables, logic gates, and software engineering principles.", grade: "Grade 11", lessonsCount: 16, quizzesCount: 4, duration: "8", progress: 0, iconType: "it" },
+      { id: "english-11", title: "Grade 11 English Literature", description: "Critical analysis of poetry, drama, and prose, with written assignments and vocab quizzes.", grade: "Grade 11", lessonsCount: 12, quizzesCount: 3, duration: "6", progress: 15, iconType: "english" }
+    ];
+    localStorage.setItem("courses", JSON.stringify(defaultCourses));
+    return defaultCourses;
+  }
+  return [];
+}
+
+// 11. GET LIVE CLASSES
+export async function getLiveClasses(): Promise<LiveClass[]> {
+  const list: LiveClass[] = [];
+  try {
+    const snap = await getDocs(collection(db, "live_classes"));
+    snap.forEach((docSnap) => {
+      list.push(docSnap.data() as LiveClass);
+    });
+    if (list.length > 0) return list;
+  } catch (err) {
+    console.warn("Firestore getLiveClasses failed, falling back to localStorage:", err);
+  }
+
+  if (typeof window !== "undefined") {
+    const stored = localStorage.getItem("live_classes");
+    if (stored) return JSON.parse(stored) as LiveClass[];
+
+    const defaultLiveClasses: LiveClass[] = [
+      { id: "1", title: "Newtonian Physics Live Lesson", teacher: "Professor Davis", time: "Tomorrow, 9:00 AM", duration: "60 mins" },
+      { id: "2", title: "Trigonometry Masterclass", teacher: "Madame Nishadi", time: "July 16, 2:00 PM", duration: "45 mins" }
+    ];
+    localStorage.setItem("live_classes", JSON.stringify(defaultLiveClasses));
+    return defaultLiveClasses;
+  }
+  return [];
+}
+
+// 12. SAVE LIVE CLASS
+export async function saveLiveClass(item: LiveClass): Promise<boolean> {
+  try {
+    const docRef = doc(db, "live_classes", item.id);
+    await setDoc(docRef, item);
+  } catch (err) {
+    console.warn("Firestore saveLiveClass failed:", err);
+  }
+
+  if (typeof window !== "undefined") {
+    const stored = localStorage.getItem("live_classes");
+    const list = stored ? JSON.parse(stored) as LiveClass[] : [];
+    list.unshift(item);
+    localStorage.setItem("live_classes", JSON.stringify(list));
+  }
+  return true;
+}
+
+// 13. GET RECORDED LESSONS
+export async function getRecordedLessons(): Promise<RecordedLesson[]> {
+  const list: RecordedLesson[] = [];
+  try {
+    const snap = await getDocs(collection(db, "recorded_lessons"));
+    snap.forEach((docSnap) => {
+      list.push(docSnap.data() as RecordedLesson);
+    });
+    if (list.length > 0) return list;
+  } catch (err) {
+    console.warn("Firestore getRecordedLessons failed, falling back to localStorage:", err);
+  }
+
+  if (typeof window !== "undefined") {
+    const stored = localStorage.getItem("recorded_lessons");
+    if (stored) return JSON.parse(stored) as RecordedLesson[];
+
+    const defaultRecorded: RecordedLesson[] = [
+      { id: "rec_1", title: "Chapter 1: Intro to Gravitation", category: "Physics", views: "142 views", time: "3 days ago" },
+      { id: "rec_2", title: "Chapter 3: Alkanes & Chemical Bonds", category: "Chemistry", views: "98 views", time: "1 week ago" },
+      { id: "rec_3", title: "Chapter 2: Quadratic Equations Basics", category: "Mathematics", views: "210 views", time: "2 weeks ago" }
+    ];
+    localStorage.setItem("recorded_lessons", JSON.stringify(defaultRecorded));
+    return defaultRecorded;
+  }
+  return [];
+}
+
+// 14. SAVE RECORDED LESSON
+export async function saveRecordedLesson(item: RecordedLesson): Promise<boolean> {
+  try {
+    const docRef = doc(db, "recorded_lessons", item.id);
+    await setDoc(docRef, item);
+  } catch (err) {
+    console.warn("Firestore saveRecordedLesson failed:", err);
+  }
+
+  if (typeof window !== "undefined") {
+    const stored = localStorage.getItem("recorded_lessons");
+    const list = stored ? JSON.parse(stored) as RecordedLesson[] : [];
+    list.unshift(item);
+    localStorage.setItem("recorded_lessons", JSON.stringify(list));
+  }
+  return true;
+}
+
+// 15. UPDATE USER PASSWORD
+export async function updateUserPassword(email: string, password: string): Promise<boolean> {
+  const normEmail = email.toLowerCase().trim();
+  try {
+    const userDocRef = doc(db, "users", normEmail);
+    await setDoc(userDocRef, { password }, { merge: true });
+    console.log("Password updated successfully in Firestore");
+  } catch (err) {
+    console.warn("Firestore updatePassword failed:", err);
+  }
+
+  if (typeof window !== "undefined") {
+    const stored = localStorage.getItem("registered_users");
+    if (stored) {
+      const list = JSON.parse(stored) as UserProfile[];
+      const updated = list.map((u: UserProfile) => {
+        if (u.email.toLowerCase() === normEmail) {
+          return { ...u, password };
+        }
+        return u;
+      });
+      localStorage.setItem("registered_users", JSON.stringify(updated));
+    }
+  }
+  return true;
+}
+
+// 16. UPDATE USER PROFILE
+export async function updateUserProfile(email: string, name: string): Promise<boolean> {
+  const normEmail = email.toLowerCase().trim();
+  try {
+    const userDocRef = doc(db, "users", normEmail);
+    await setDoc(userDocRef, { name }, { merge: true });
+    console.log("Profile name updated successfully in Firestore");
+  } catch (err) {
+    console.warn("Firestore updateUserProfile failed:", err);
+  }
+
+  if (typeof window !== "undefined") {
+    const stored = localStorage.getItem("registered_users");
+    if (stored) {
+      const list = JSON.parse(stored) as UserProfile[];
+      const updated = list.map((u: UserProfile) => {
+        if (u.email.toLowerCase() === normEmail) {
+          return { ...u, name };
+        }
+        return u;
+      });
+      localStorage.setItem("registered_users", JSON.stringify(updated));
+    }
+  }
+  return true;
 }

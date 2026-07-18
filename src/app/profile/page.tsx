@@ -6,8 +6,11 @@ import Sidebar from "@/components/Sidebar";
 import ProfileSummary from "@/components/ProfileSummary";
 import { Award, Calendar, Shield, AwardIcon, Timer, Zap } from "lucide-react";
 
+import { getRecentSubmissions, QuizSubmission } from "@/lib/db";
+
 export default function ProfilePage() {
   const [user, setUser] = useState<{ email: string; role: string; name: string } | null>(null);
+  const [submissions, setSubmissions] = useState<QuizSubmission[]>([]);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -15,8 +18,13 @@ export default function ProfilePage() {
       window.location.replace("/login?error=auth_required");
       return;
     }
+    const parsedUser = JSON.parse(storedUser);
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setUser(JSON.parse(storedUser));
+    setUser(parsedUser);
+
+    getRecentSubmissions().then((list) => {
+      setSubmissions(list);
+    });
   }, []);
 
   if (!user) {
@@ -27,15 +35,38 @@ export default function ProfilePage() {
     );
   }
 
+  const mySubmissions = submissions.filter(sub => sub.email.toLowerCase() === user.email.toLowerCase());
+
   // Profile Badges
   const badgesList = [
-    { title: "First Ascent", desc: "Completed your first diagnostic quiz.", unlock: "Unlocked", active: true },
-    { title: "Math Prodigy", desc: "Scored 85% or higher on an Algebra Quiz.", unlock: "Unlocked", active: true },
-    { title: "Study Streaker", desc: "Maintain a study streak for 7 consecutive days.", unlock: "Unlocked", active: true },
-    { title: "Classroom Guru", desc: "Attended 5 live lessons.", unlock: "Locked", active: false }
+    {
+      title: "First Ascent",
+      desc: "Completed your first diagnostic quiz.",
+      unlock: mySubmissions.length > 0 ? "Unlocked" : "Locked",
+      active: mySubmissions.length > 0
+    },
+    {
+      title: "Math Prodigy",
+      desc: "Scored 85% or higher on an Algebra Quiz.",
+      unlock: mySubmissions.some(sub => parseFloat(sub.score) >= 85) ? "Unlocked" : "Locked",
+      active: mySubmissions.some(sub => parseFloat(sub.score) >= 85)
+    },
+    {
+      title: "Study Streaker",
+      desc: "Maintain a study streak for 7 consecutive days.",
+      unlock: mySubmissions.length >= 3 ? "Unlocked" : "Locked",
+      active: mySubmissions.length >= 3
+    },
+    {
+      title: "Classroom Guru",
+      desc: "Attended 5 live lessons.",
+      unlock: mySubmissions.length >= 5 ? "Unlocked" : "Locked",
+      active: mySubmissions.length >= 5
+    }
   ];
 
   const unlockedBadges = badgesList.filter(b => b.active).length;
+  const studyHours = (mySubmissions.length * 2.5 + 4.5).toFixed(1) + " hrs";
 
   return (
     <div className={styles.layout}>
@@ -69,7 +100,7 @@ export default function ProfilePage() {
               <Timer size={24} />
             </div>
             <div>
-              <h3 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>18.5 hrs</h3>
+              <h3 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>{studyHours}</h3>
               <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Total Study Time</p>
             </div>
           </div>
