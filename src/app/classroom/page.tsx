@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import styles from "../dashboard/page.module.css";
 import Sidebar from "@/components/Sidebar";
 import { GraduationCap, PlayCircle, PlusCircle, Video, X, Eye } from "lucide-react";
-import { getLiveClasses, saveLiveClass, getRecordedLessons, saveRecordedLesson } from "@/lib/db";
+import { getLiveClasses, saveLiveClass, getRecordedLessons, saveRecordedLesson, uploadFileToStorage } from "@/lib/db";
 
 interface LiveClass {
   id: string;
@@ -20,6 +20,7 @@ interface RecordedLesson {
   category: string;
   views: string;
   time: string;
+  videoUrl?: string;
 }
 
 export default function ClassroomPage() {
@@ -30,7 +31,7 @@ export default function ClassroomPage() {
   const [recordingLessons, setRecordingLessons] = useState<RecordedLesson[]>([]);
 
   // Modal flags
-  const [activeStream, setActiveStream] = useState<{ title: string; teacher?: string; isLive: boolean } | null>(null);
+  const [activeStream, setActiveStream] = useState<{ title: string; teacher?: string; isLive: boolean; videoUrl?: string } | null>(null);
   const [showCreateLiveModal, setShowCreateLiveModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
 
@@ -48,6 +49,8 @@ export default function ClassroomPage() {
 
   const [videoTitle, setVideoTitle] = useState("");
   const [videoCategory, setVideoCategory] = useState("Science");
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
 
   // Chat stream
   const [chatMessages, setChatMessages] = useState<{ user: string; text: string }[]>([]);
@@ -141,18 +144,31 @@ export default function ClassroomPage() {
   const handleUploadVideo = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!videoTitle.trim()) return;
-    const newVideo: RecordedLesson = {
-      id: String(Date.now()),
-      title: videoTitle,
-      category: videoCategory,
-      views: "0 views",
-      time: "Just now"
-    };
-    await saveRecordedLesson(newVideo);
-    setRecordingLessons([newVideo, ...recordingLessons]);
-    setShowUploadModal(false);
-    setVideoTitle("");
-    showToast("Archive video uploaded successfully!", "success");
+    try {
+      setIsUploadingVideo(true);
+      let storageUrl = "";
+      if (videoFile) {
+        storageUrl = await uploadFileToStorage(`recorded_lessons/${Date.now()}_${videoFile.name}`, videoFile);
+      }
+      const newVideo: RecordedLesson = {
+        id: String(Date.now()),
+        title: videoTitle,
+        category: videoCategory,
+        views: "0 views",
+        time: "Just now",
+        ...(storageUrl ? { videoUrl: storageUrl } : {})
+      };
+      await saveRecordedLesson(newVideo);
+      setRecordingLessons([newVideo, ...recordingLessons]);
+      setShowUploadModal(false);
+      setVideoTitle("");
+      setVideoFile(null);
+      showToast("Archive video uploaded and saved successfully!", "success");
+    } catch (err) {
+      showToast("Failed to upload video content.", "error");
+    } finally {
+      setIsUploadingVideo(false);
+    }
   };
 
   const handleJoinRoom = (title: string, teacher: string) => {
@@ -163,8 +179,8 @@ export default function ClassroomPage() {
     ]);
   };
 
-  const handlePlayRecording = (title: string) => {
-    setActiveStream({ title, isLive: false });
+  const handlePlayRecording = (title: string, videoUrl?: string) => {
+    setActiveStream({ title, isLive: false, videoUrl });
     setChatMessages([
       { user: "System", text: "Playing archived lecture recording." }
     ]);
@@ -276,7 +292,7 @@ export default function ClassroomPage() {
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: "1.2rem" }}>
                 {recordingLessons.map((item) => (
-                  <div key={item.id} onClick={() => handlePlayRecording(item.title)} className="glass-panel-hover" style={{ padding: "1.2rem", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.04)", background: "rgba(255,255,255,0.01)", position: "relative", cursor: "pointer" }}>
+                  <div key={item.id} onClick={() => handlePlayRecording(item.title, item.videoUrl)} className="glass-panel-hover" style={{ padding: "1.2rem", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.04)", background: "rgba(255,255,255,0.01)", position: "relative", cursor: "pointer" }}>
                     <div style={{ width: "100%", height: "120px", borderRadius: "8px", background: "linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(249, 115, 22, 0.15) 100%)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "12px", border: "1px solid rgba(255,255,255,0.05)" }}>
                       <PlayCircle size={36} color="#ffffff" style={{ opacity: 0.8 }} />
                     </div>
@@ -337,19 +353,28 @@ export default function ClassroomPage() {
                   </span>
                 )}
 
-                {/* Simulated Presentation Slide */}
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", height: "100%", padding: "2rem", textAlign: "center" }}>
-                  <div style={{ border: "2px dashed rgba(167, 139, 250, 0.3)", borderRadius: "12px", padding: "1.5rem", background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", width: "90%", display: "flex", flexDirection: "column", gap: "10px" }}>
-                    <div style={{ fontSize: "0.75rem", color: "var(--color-orange)", textTransform: "uppercase", fontWeight: "bold" }}>Lesson Subject Overview</div>
-                    <h3 style={{ fontSize: "1.2rem", fontWeight: "bold", color: "#ffffff" }}>{activeStream.title}</h3>
-                    <div style={{ height: "2px", background: "var(--gradient-primary)", width: "50px", margin: "5px auto" }}></div>
-                    <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", fontStyle: "italic" }}>
-                      {activeStream.isLive 
-                        ? "Active Webinar stream. Real-time class session instruction. Ask questions below."
-                        : "Archived classroom recaps. Student comments log history preserved below."}
+                {/* Real Video Player or Simulated Presentation Slide */}
+                {activeStream.videoUrl ? (
+                  <video 
+                    src={activeStream.videoUrl} 
+                    controls 
+                    autoPlay
+                    style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "12px", background: "#000000" }}
+                  />
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", height: "100%", padding: "2rem", textAlign: "center" }}>
+                    <div style={{ border: "2px dashed rgba(167, 139, 250, 0.3)", borderRadius: "12px", padding: "1.5rem", background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", width: "90%", display: "flex", flexDirection: "column", gap: "10px" }}>
+                      <div style={{ fontSize: "0.75rem", color: "var(--color-orange)", textTransform: "uppercase", fontWeight: "bold" }}>Lesson Subject Overview</div>
+                      <h3 style={{ fontSize: "1.2rem", fontWeight: "bold", color: "#ffffff" }}>{activeStream.title}</h3>
+                      <div style={{ height: "2px", background: "var(--gradient-primary)", width: "50px", margin: "5px auto" }}></div>
+                      <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", fontStyle: "italic" }}>
+                        {activeStream.isLive 
+                          ? "Active Webinar stream. Real-time class session instruction. Ask questions below."
+                          : "Archived classroom recaps. Student comments log history preserved below."}
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
               </div>
               <div style={{ padding: "10px 0 0 0" }}>
@@ -441,9 +466,21 @@ export default function ClassroomPage() {
                   <option value="Information Technology">Information Technology</option>
                 </select>
               </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <label style={{ fontSize: "0.85rem", fontWeight: "600", color: "var(--text-secondary)" }}>Video File</label>
+                <input 
+                  type="file" 
+                  accept="video/*" 
+                  required
+                  onChange={(e) => setVideoFile(e.target.files?.[0] || null)} 
+                  style={{ width: "100%", padding: "10px", borderRadius: "8px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#ffffff", outline: "none" }} 
+                />
+              </div>
               <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "1rem" }}>
                 <button type="button" onClick={() => setShowUploadModal(false)} style={{ padding: "8px 16px", borderRadius: "6px", background: "none", border: "1px solid rgba(255,255,255,0.1)", color: "#ffffff", cursor: "pointer" }}>Cancel</button>
-                <button type="submit" className="gradient-button" style={{ padding: "8px 16px", borderRadius: "6px" }}>Upload</button>
+                <button type="submit" className="gradient-button" disabled={isUploadingVideo} style={{ padding: "8px 16px", borderRadius: "6px" }}>
+                  {isUploadingVideo ? "Uploading..." : "Upload"}
+                </button>
               </div>
             </form>
           </div>

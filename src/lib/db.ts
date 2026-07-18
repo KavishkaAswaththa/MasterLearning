@@ -1,4 +1,5 @@
-import { db } from "./firebase";
+import { db, storage } from "./firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { 
   collection, 
   doc, 
@@ -14,6 +15,7 @@ export interface UserProfile {
   email: string;
   role: string;
   password?: string;
+  photoURL?: string;
 }
 
 export interface QuizSubmission {
@@ -563,12 +565,16 @@ export async function updateUserPassword(email: string, password: string): Promi
 }
 
 // 16. UPDATE USER PROFILE
-export async function updateUserProfile(email: string, name: string): Promise<boolean> {
+export async function updateUserProfile(email: string, name: string, photoURL?: string): Promise<boolean> {
   const normEmail = email.toLowerCase().trim();
   try {
     const userDocRef = doc(db, "users", normEmail);
-    await setDoc(userDocRef, { name }, { merge: true });
-    console.log("Profile name updated successfully in Firestore");
+    const updateData: Record<string, string> = { name };
+    if (photoURL) {
+      updateData.photoURL = photoURL;
+    }
+    await setDoc(userDocRef, updateData, { merge: true });
+    console.log("Profile updated successfully in Firestore");
   } catch (err) {
     console.warn("Firestore updateUserProfile failed:", err);
   }
@@ -579,7 +585,7 @@ export async function updateUserProfile(email: string, name: string): Promise<bo
       const list = JSON.parse(stored) as UserProfile[];
       const updated = list.map((u: UserProfile) => {
         if (u.email.toLowerCase() === normEmail) {
-          return { ...u, name };
+          return { ...u, name, ...(photoURL ? { photoURL } : {}) };
         }
         return u;
       });
@@ -587,4 +593,17 @@ export async function updateUserProfile(email: string, name: string): Promise<bo
     }
   }
   return true;
+}
+
+// 17. UPLOAD FILE TO STORAGE
+export async function uploadFileToStorage(path: string, file: File): Promise<string> {
+  try {
+    const fileRef = ref(storage, path);
+    const snapshot = await uploadBytes(fileRef, file);
+    const url = await getDownloadURL(snapshot.ref);
+    return url;
+  } catch (err) {
+    console.error("Error uploading file to storage:", err);
+    throw err;
+  }
 }

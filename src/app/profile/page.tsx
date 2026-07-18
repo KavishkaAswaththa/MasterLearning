@@ -9,7 +9,7 @@ import { Award, Calendar, Shield, AwardIcon, Timer, Zap } from "lucide-react";
 import { getRecentSubmissions, QuizSubmission } from "@/lib/db";
 
 export default function ProfilePage() {
-  const [user, setUser] = useState<{ email: string; role: string; name: string } | null>(null);
+  const [user, setUser] = useState<{ email: string; role: string; name: string; photoURL?: string } | null>(null);
   const [submissions, setSubmissions] = useState<QuizSubmission[]>([]);
 
   useEffect(() => {
@@ -121,8 +121,12 @@ export default function ProfilePage() {
           <div className={styles.leftColumn}>
             {/* Profile Overview Card */}
             <div className="glass-panel" style={{ padding: "2.5rem", marginBottom: "2rem", border: "1px solid var(--glass-border)", display: "flex", alignItems: "center", gap: "2rem", flexWrap: "wrap" }}>
-              <div style={{ width: "90px", height: "90px", borderRadius: "24px", background: "var(--gradient-primary)", display: "flex", alignItems: "center", justifyContent: "center", color: "#ffffff", fontSize: "2.5rem", fontWeight: "800", boxShadow: "0 8px 24px rgba(139,92,246,0.3)" }}>
-                {user.name.charAt(0).toUpperCase()}
+              <div style={{ width: "90px", height: "90px", borderRadius: "24px", background: "var(--gradient-primary)", display: "flex", alignItems: "center", justifyContent: "center", color: "#ffffff", fontSize: "2.5rem", fontWeight: "800", boxShadow: "0 8px 24px rgba(139,92,246,0.3)", overflow: "hidden" }}>
+                {user.photoURL ? (
+                  <img src={user.photoURL} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                ) : (
+                  user.name.charAt(0).toUpperCase()
+                )}
               </div>
               <div>
                 <h2 style={{ fontSize: "1.5rem", fontWeight: "800", color: "#ffffff", marginBottom: "6px" }}>{user.name}</h2>

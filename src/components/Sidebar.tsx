@@ -9,7 +9,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ activeTab = "dashboard" }: SidebarProps) {
-  const [user] = React.useState<{ name: string; role: string; email?: string } | null>(() => {
+  const [user] = React.useState<{ name: string; role: string; email?: string; photoURL?: string } | null>(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("user");
       return stored ? JSON.parse(stored) : { name: "Nishadi Perera", role: "student" };
@@ -137,8 +137,12 @@ export default function Sidebar({ activeTab = "dashboard" }: SidebarProps) {
       <div className={styles.footerSection}>
         <div className={styles.userCard}>
           <div className={styles.avatar}>
-            <div className={styles.avatarInner}>
-              {user ? user.name.charAt(0).toUpperCase() : "N"}
+            <div className={styles.avatarInner} style={{ overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {user && user.photoURL ? (
+                <img src={user.photoURL} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              ) : (
+                user ? user.name.charAt(0).toUpperCase() : "N"
+              )}
             </div>
           </div>
           <div className={styles.userInfo}>

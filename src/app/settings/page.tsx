@@ -5,14 +5,16 @@ import styles from "../dashboard/page.module.css";
 import Sidebar from "@/components/Sidebar";
 import { Save, Lock, User, Bell } from "lucide-react";
 
-import { updateUserProfile, updateUserPassword } from "@/lib/db";
+import { updateUserProfile, updateUserPassword, uploadFileToStorage } from "@/lib/db";
 
 export default function SettingsPage() {
-  const [user, setUser] = useState<{ email: string; role: string; name: string } | null>(null);
+  const [user, setUser] = useState<{ email: string; role: string; name: string; photoURL?: string } | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [notifications, setNotifications] = useState(true);
+  const [photoURL, setPhotoURL] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
 
   // Custom Toast State
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
@@ -31,13 +33,29 @@ export default function SettingsPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setUser(parsed);
     setDisplayName(parsed.name);
+    setPhotoURL(parsed.photoURL || "");
   }, []);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    try {
+      setIsUploading(true);
+      const url = await uploadFileToStorage(`profile_pictures/${user.email}.png`, file);
+      setPhotoURL(url);
+      showToast("Image uploaded successfully! Click Save Changes to apply.", "success");
+    } catch (err) {
+      showToast("Failed to upload image.", "error");
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    await updateUserProfile(user.email, displayName);
-    const updatedUser = { ...user, name: displayName };
+    await updateUserProfile(user.email, displayName, photoURL);
+    const updatedUser = { ...user, name: displayName, photoURL };
     localStorage.setItem("user", JSON.stringify(updatedUser));
     setUser(updatedUser);
     showToast("Profile settings saved successfully!", "success");
@@ -93,6 +111,22 @@ export default function SettingsPage() {
               </h2>
 
               <form onSubmit={handleSaveProfile} style={{ display: "flex", flexDirection: "column", gap: "1.2rem" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", marginBottom: "0.5rem" }}>
+                  <div style={{ width: "64px", height: "64px", borderRadius: "16px", background: "var(--gradient-primary)", display: "flex", alignItems: "center", justifyContent: "center", color: "#ffffff", fontSize: "1.8rem", fontWeight: "bold", overflow: "hidden" }}>
+                    {photoURL ? (
+                      <img src={photoURL} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : (
+                      displayName.charAt(0).toUpperCase()
+                    )}
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                    <label style={{ fontSize: "0.85rem", fontWeight: "600", color: "var(--text-secondary)", cursor: "pointer", background: "rgba(255,255,255,0.06)", padding: "8px 12px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.08)", userSelect: "none" }}>
+                      {isUploading ? "Uploading..." : "Upload Profile Picture"}
+                      <input type="file" accept="image/*" onChange={handleFileChange} style={{ display: "none" }} disabled={isUploading} />
+                    </label>
+                  </div>
+                </div>
+
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                   <label style={{ fontSize: "0.85rem", fontWeight: "600", color: "var(--text-secondary)" }}>Registered Email Address</label>
                   <input
