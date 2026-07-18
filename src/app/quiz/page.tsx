@@ -67,9 +67,42 @@ export default function QuizListPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [quizTitle, setQuizTitle] = useState("");
   const [quizGrade, setQuizGrade] = useState("Grade 10");
-  const [quizQuestions, setQuizQuestions] = useState(10);
   const [quizDuration, setQuizDuration] = useState("15 mins");
   const [quizDesc, setQuizDesc] = useState("");
+
+  interface QuestionInput {
+    text: string;
+    options: string[];
+    correctIndex: number;
+  }
+  const [questionsList, setQuestionsList] = useState<QuestionInput[]>([
+    { text: "", options: ["", "", "", ""], correctIndex: 0 }
+  ]);
+
+  const addQuestionField = () => {
+    setQuestionsList([...questionsList, { text: "", options: ["", "", "", ""], correctIndex: 0 }]);
+  };
+
+  const removeQuestionField = (index: number) => {
+    if (questionsList.length === 1) return;
+    setQuestionsList(questionsList.filter((_, i) => i !== index));
+  };
+
+  const handleQuestionChange = (index: number, field: string, val: string | number) => {
+    const copy = [...questionsList];
+    if (field === "text") {
+      copy[index].text = String(val);
+    } else if (field === "correctIndex") {
+      copy[index].correctIndex = Number(val);
+    }
+    setQuestionsList(copy);
+  };
+
+  const handleOptionChange = (qIndex: number, oIndex: number, val: string) => {
+    const copy = [...questionsList];
+    copy[qIndex].options[oIndex] = val;
+    setQuestionsList(copy);
+  };
 
   // Custom Toast State
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
@@ -107,13 +140,12 @@ export default function QuizListPage() {
 
     const parsedDuration = parseFloat(quizDuration) || 15;
 
-    // Generate mock questions matching the requested count so it's fully playable!
-    const mockQuestions = Array.from({ length: Number(quizQuestions) }).map((_, idx) => ({
+    const questions = questionsList.map((q, idx) => ({
       id: `q-${idx + 1}`,
-      text: `Question ${idx + 1}: Dynamic assessment challenge for ${quizTitle}. Which option is correct?`,
-      options: ["Correct Option", "Alternative Option A", "Alternative Option B", "Alternative Option C"],
-      correctOptionIndex: 0,
-      explanation: `Correct Option is correct as it is the dynamically seeded target answer for ${quizTitle}.`
+      text: q.text.trim() || `Question ${idx + 1}`,
+      options: q.options.map((opt, oIdx) => opt.trim() || `Option ${oIdx + 1}`),
+      correctOptionIndex: q.correctIndex,
+      explanation: `The correct option is: ${q.options[q.correctIndex] || 'Option 1'}.`
     }));
 
     const newQuiz: Quiz = {
@@ -123,7 +155,7 @@ export default function QuizListPage() {
       durationSeconds: parsedDuration * 60,
       description: quizDesc || "No description provided.",
       grade: quizGrade,
-      questions: mockQuestions
+      questions: questions
     };
 
     // Save to unified database
@@ -136,6 +168,7 @@ export default function QuizListPage() {
     setShowCreateModal(false);
     setQuizTitle("");
     setQuizDesc("");
+    setQuestionsList([{ text: "", options: ["", "", "", ""], correctIndex: 0 }]);
     showToast(`New quiz "${quizTitle}" published successfully!`, "success");
   };
 
@@ -475,38 +508,97 @@ export default function QuizListPage() {
       {/* Create Quiz Modal */}
       {showCreateModal && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1200 }}>
-          <div className="glass-panel" style={{ padding: "2.5rem", width: "100%", maxWidth: "400px", border: "1px solid var(--glass-border)" }}>
+          <div className="glass-panel" style={{ padding: "2.5rem", width: "90%", maxWidth: "600px", border: "1px solid var(--glass-border)", maxHeight: "90vh", overflowY: "auto" }}>
             <h2 style={{ fontSize: "1.25rem", fontWeight: "bold", color: "#ffffff", marginBottom: "1.5rem" }}>Create New Quiz</h2>
             <form onSubmit={handleCreateQuiz} style={{ display: "flex", flexDirection: "column", gap: "1.2rem" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                 <label style={{ fontSize: "0.85rem", fontWeight: "600", color: "var(--text-secondary)" }}>Quiz Title</label>
                 <input type="text" required placeholder="e.g. Grade 10 Biology Basics" value={quizTitle} onChange={(e) => setQuizTitle(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "8px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#ffffff", outline: "none" }} />
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <label style={{ fontSize: "0.85rem", fontWeight: "600", color: "var(--text-secondary)" }}>Grade Level</label>
-                <select value={quizGrade} onChange={(e) => setQuizGrade(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "8px", background: "rgba(25,18,50,0.9)", border: "1px solid rgba(255,255,255,0.08)", color: "#ffffff", outline: "none" }}>
-                  <option value="Grade 10">Grade 10</option>
-                  <option value="Grade 11">Grade 11</option>
-                  <option value="Grade 12">Grade 12</option>
-                </select>
-              </div>
               <div style={{ display: "flex", gap: "10px" }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px", flex: 1 }}>
-                  <label style={{ fontSize: "0.85rem", fontWeight: "600", color: "var(--text-secondary)" }}>Questions</label>
-                  <input type="number" required value={quizQuestions} onChange={(e) => setQuizQuestions(Number(e.target.value))} style={{ width: "100%", padding: "10px", borderRadius: "8px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#ffffff", outline: "none" }} />
+                  <label style={{ fontSize: "0.85rem", fontWeight: "600", color: "var(--text-secondary)" }}>Grade Level</label>
+                  <select value={quizGrade} onChange={(e) => setQuizGrade(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "8px", background: "rgba(25,18,50,0.9)", border: "1px solid rgba(255,255,255,0.08)", color: "#ffffff", outline: "none" }}>
+                    <option value="Grade 10">Grade 10</option>
+                    <option value="Grade 11">Grade 11</option>
+                    <option value="Grade 12">Grade 12</option>
+                  </select>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px", flex: 1 }}>
-                  <label style={{ fontSize: "0.85rem", fontWeight: "600", color: "var(--text-secondary)" }}>Duration</label>
+                  <label style={{ fontSize: "0.85rem", fontWeight: "600", color: "var(--text-secondary)" }}>Duration (e.g. 15 mins)</label>
                   <input type="text" required value={quizDuration} onChange={(e) => setQuizDuration(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "8px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#ffffff", outline: "none" }} />
                 </div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                 <label style={{ fontSize: "0.85rem", fontWeight: "600", color: "var(--text-secondary)" }}>Description</label>
-                <textarea rows={3} placeholder="Describe quiz subjects..." value={quizDesc} onChange={(e) => setQuizDesc(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "8px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#ffffff", outline: "none", resize: "none" }} />
+                <textarea rows={2} placeholder="Describe quiz subjects..." value={quizDesc} onChange={(e) => setQuizDesc(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: "8px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#ffffff", outline: "none", resize: "none" }} />
               </div>
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "1rem" }}>
+
+              {/* Questions Builder Section */}
+              <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: "1.2rem", marginTop: "0.5rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+                  <h3 style={{ fontSize: "1rem", fontWeight: "bold", color: "#ffffff" }}>Questions Builder ({questionsList.length})</h3>
+                  <button type="button" onClick={addQuestionField} className="gradient-button" style={{ padding: "6px 12px", fontSize: "0.8rem", borderRadius: "6px", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <PlusCircle size={14} /> Add Question
+                  </button>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "1.2rem", maxHeight: "300px", overflowY: "auto", paddingRight: "5px" }}>
+                  {questionsList.map((q, qIdx) => (
+                    <div key={qIdx} style={{ padding: "1rem", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "10px", display: "flex", flexDirection: "column", gap: "10px", position: "relative" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontSize: "0.8rem", fontWeight: "bold", color: "var(--color-orange)" }}>Question {qIdx + 1}</span>
+                        {questionsList.length > 1 && (
+                          <button type="button" onClick={() => removeQuestionField(qIdx)} style={{ background: "none", border: "none", color: "#ef4444", fontSize: "0.75rem", cursor: "pointer", fontWeight: "bold" }}>
+                            Delete
+                          </button>
+                        )}
+                      </div>
+                      
+                      <input 
+                        type="text" 
+                        required 
+                        placeholder={`Enter question ${qIdx + 1} text...`} 
+                        value={q.text} 
+                        onChange={(e) => handleQuestionChange(qIdx, "text", e.target.value)} 
+                        style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.08)", color: "#ffffff", fontSize: "0.85rem", outline: "none" }} 
+                      />
+
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                        {q.options.map((opt, oIdx) => (
+                          <input 
+                            key={oIdx}
+                            type="text" 
+                            required 
+                            placeholder={`Option ${oIdx + 1}...`} 
+                            value={opt} 
+                            onChange={(e) => handleOptionChange(qIdx, oIdx, e.target.value)} 
+                            style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.08)", color: "#ffffff", fontSize: "0.8rem", outline: "none" }} 
+                          />
+                        ))}
+                      </div>
+
+                      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                        <label style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>Correct Answer</label>
+                        <select 
+                          value={q.correctIndex} 
+                          onChange={(e) => handleQuestionChange(qIdx, "correctIndex", e.target.value)} 
+                          style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", background: "rgba(25,18,50,0.9)", border: "1px solid rgba(255,255,255,0.08)", color: "#ffffff", fontSize: "0.8rem", outline: "none" }}
+                        >
+                          <option value={0}>Option 1</option>
+                          <option value={1}>Option 2</option>
+                          <option value={2}>Option 3</option>
+                          <option value={3}>Option 4</option>
+                        </select>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "1rem", borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: "1rem" }}>
                 <button type="button" onClick={() => setShowCreateModal(false)} style={{ padding: "8px 16px", borderRadius: "6px", background: "none", border: "1px solid rgba(255,255,255,0.1)", color: "#ffffff", cursor: "pointer" }}>Cancel</button>
-                <button type="submit" className="gradient-button" style={{ padding: "8px 16px", borderRadius: "6px" }}>Create</button>
+                <button type="submit" className="gradient-button" style={{ padding: "8px 16px", borderRadius: "6px" }}>Publish Quiz</button>
               </div>
             </form>
           </div>

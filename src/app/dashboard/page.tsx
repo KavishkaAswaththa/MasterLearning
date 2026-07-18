@@ -125,6 +125,12 @@ export default function Dashboard() {
 
   const studentsCount = allUsersList.filter(u => u.role === "student").length;
   const teachersCount = allUsersList.filter(u => u.role === "teacher").length;
+  const teacherAvgScore = submissions.length > 0
+    ? (submissions.reduce((acc, curr) => {
+        const val = parseFloat(curr.score.replace("%", ""));
+        return acc + (isNaN(val) ? 0 : val);
+      }, 0) / submissions.length).toFixed(1) + "%"
+    : "0.0%";
 
   // Render Loading state
   if (!user) {
@@ -314,7 +320,7 @@ export default function Dashboard() {
                     <Users size={24} />
                   </div>
                   <div>
-                    <h3 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>142</h3>
+                    <h3 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>{studentsCount}</h3>
                     <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Active Students</p>
                   </div>
                 </div>
@@ -324,7 +330,7 @@ export default function Dashboard() {
                     <BookOpen size={24} />
                   </div>
                   <div>
-                    <h3 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>5</h3>
+                    <h3 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>{courses.length}</h3>
                     <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Assigned Classes</p>
                   </div>
                 </div>
@@ -334,7 +340,7 @@ export default function Dashboard() {
                     <TrendingUp size={24} />
                   </div>
                   <div>
-                    <h3 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>88.4%</h3>
+                    <h3 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>{teacherAvgScore}</h3>
                     <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>Avg Quiz Score</p>
                   </div>
                 </div>
