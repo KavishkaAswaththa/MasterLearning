@@ -110,40 +110,66 @@ To prevent corrupt data entries or statistical calculations failures, strict val
 
 ## 6. Installation & Operational Guide
 
-### 6.1 Setup Credentials
-Duplicate the sample environment configurations template into a local file:
-```bash
-cp .env.sample .env.local
-```
-Fill in your Firebase web app keys in the `.env.local` file.
+### 6.1 Local Development Setup
 
-### 6.2 Install Dependencies
-Install dependencies:
-```bash
-npm install
+1. **Setup Credentials**: Duplicate the sample environment configurations template into a local file:
+   ```bash
+   cp .env.sample .env.local
+   ```
+   Fill in your Firebase web app keys in the `.env.local` file.
+
+2. **Install Dependencies**:
+   ```bash
+   npm install
+   ```
+
+3. **Run Database Seeder**: To initialize user accounts, templates, and submission statistics in Firestore, run:
+   ```bash
+   node --env-file=.env.local scripts/seed.js
+   ```
+
+4. **Start Development Server**:
+   ```bash
+   npm run dev
+   ```
+
+5. **Static Site Build**: To compile and export the application into a static `/out` folder locally:
+   ```bash
+   npm run build
+   ```
+
+---
+
+## 7. CI/CD Deployment Pipeline (GitHub Actions & Firebase Hosting)
+
+MasterLearning includes a fully automated deployment pipeline defined in `.github/workflows/main.yml`. Whenever code is pushed to the `main` or `master` branch, GitHub Actions executes the following pipeline:
+
+```mermaid
+graph LR
+    Push[Git Push to main/master] --> Checkout[Checkout Repo]
+    Checkout --> SetupNode[Setup Node.js 20]
+    SetupNode --> InstallDeps[Install Dependencies]
+    InstallDeps --> BuildApp[Compile & Build Static Export]
+    BuildApp --> DeployFirebase[Deploy /out to Firebase Hosting]
 ```
 
-### 6.3 Run Database Seeder
-To initialize user directories and past submission stats inside Firestore and local fallback files, execute the seed utility script:
-```bash
-node --env-file=.env.local scripts/seed.js
-```
+### 7.1 Setup Pipeline Credentials
+To enable GitHub Actions to deploy to your live Firebase environment:
+1. **Firebase Service Account JSON**: Generate a private key credential JSON from your [Google Cloud Console Credentials Page](https://console.cloud.google.com/apis/credentials) for the Firebase Service Account.
+2. **GitHub Secrets**:
+   * Add `FIREBASE_SERVICE_ACCOUNT_MASTERLEARNING_224BD` to your repository Secrets and paste the content of the downloaded JSON key file.
+   * Add secrets for each of your Firebase environment variables (`NEXT_PUBLIC_FIREBASE_API_KEY`, etc.) matching the keys in `.env.local`. This allows the GitHub runner to compile static pages with active database connections.
 
-### 6.4 Compile & Run Development Server
-Run Turbopack locally:
+### 7.2 Docker Virtualization
+The project includes a multi-stage `Dockerfile` configured to compile the application and serve the static assets using an Nginx container. To build and run the container locally:
 ```bash
-npm run dev
-```
-
-Build optimization bundles or check TypeScript clean compilation:
-```bash
-npm run build
-npm run lint
+docker build -t masterlearning .
+docker run -p 80:80 masterlearning
 ```
 
 ---
 
-## 7. Default Seed Credentials
+## 8. Default Seed Credentials
 
 Use these seeded test accounts to sign in to the platform:
 
