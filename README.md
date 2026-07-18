@@ -1,154 +1,205 @@
-# MasterLearning LMS — Software Requirements Specification (SRS) & Architecture
+# 🌟 MasterLearning LMS — Interactive E-Learning & Cloud Sandbox Platform
 
-MasterLearning is a premium Learning Management System (LMS) engineered with a liquid glassmorphic layout, fluid client animations, and a dynamic hybrid storage database architecture. This document serves as the formal Software Requirements Specification (SRS) and Technical Design guide.
+Welcome to **MasterLearning**! 🚀 This is a premium, cloud-native Learning Management System (LMS) designed to deliver a modern, fluid, and highly scalable educational experience. 
 
----
-
-## 1. Executive Summary & Purpose
-
-### 1.1 Purpose
-This document specifies the software requirements, system design, architectural flowcharts, and relational models for the MasterLearning e-learning platform. It is designed to act as the single source of truth for engineering development, security auditing, and deployment instructions.
-
-### 1.2 Scope
-MasterLearning coordinates e-learning workflows under a unified platform:
-* **Academic Dashboards**: Context-rich progress screens customized for three client roles: Students, Teachers, and Administrators.
-* **Assessment Engine**: Responsive interactive quizzes featuring question timers, answer validation, and historical result logging.
-* **Registry Directory**: User management workflows with inline creations, audits, edits, and role modifications.
-* **Virtual Classroom**: Live streaming webinar simulator with active student chat lobby feeds.
+MasterLearning features a stunning, state-of-the-art **liquid glassmorphism user interface** (built on Next.js) and operates a fully decoupled, **serverless backend architecture** utilizing Google Cloud Firebase services. It is engineered from the ground up to demonstrate cloud elasticity, virtualized hosting, distributed database patterns, and robust CI/CD automation pipelines.
 
 ---
 
-## 2. System Architecture
+## 📖 1. What is MasterLearning? (The Big Picture)
 
-MasterLearning is built as a highly responsive client-side web application leveraging Next.js React patterns. The core architecture uses a decoupling design to isolate storage, interface components, and routing guards.
+Educational websites suffer from **extreme traffic volatility**. During normal school weeks, usage is low; but during exams, registrations, or assignment deadlines, traffic spikes by thousands of users instantly. 
 
-```mermaid
-graph TD
-    User([User Browser]) --> UI[React Client View - Next.js App Router]
-    UI --> Guards[Client Route Guards / Protected Context]
-    Guards --> DB_Wrapper[Hybrid DB Access Layer: src/lib/db.ts]
-    
-    DB_Wrapper -->|Try Firestore SDK| Firestore[(Firebase Cloud Firestore)]
-    DB_Wrapper -->|Fallback Cache| LocalStorage[(Browser LocalStorage Backup)]
-```
-
-### 2.1 Hybrid Storage Architecture
-To ensure continuous operation under weak network conditions or credential failures, the database abstraction wrapper (`src/lib/db.ts`) operates a **dual-engine cache-aside structure**:
-1. **Primary Database (Firestore)**: Writes and queries are sent asynchronously to Firestore collections using web client SDK handlers.
-2. **Fallback Cache (localStorage)**: If a transaction fails (e.g., net offline or firestore permission error), the wrapper intercepts the exception, logs a console warning, and replicates the record inside local storage JSON tables. Subsequent reads dynamically merge firestore docs and local buffers.
+MasterLearning solves this by deploying as a **JAMstack application**:
+* **Static Serving**: The Next.js frontend compiles entirely to static assets served globally from CDN edge nodes via Firebase Hosting. This guarantees sub-second page loads with zero runtime server costs.
+* **Serverless Scale**: Database queries and user actions are handled on-demand by serverless API collections, automatically scaling internal resource threads from zero to thousands of parallel transactions.
+* **Dual-Engine Offline Fallback**: To prevent lockouts during network drops or API limits, our custom database wrapper (`src/lib/db.ts`) runs a smart **cache-aside sync pipeline**. If Firestore is offline, records are written locally in the browser's `localStorage` and dynamically merged back when access is restored.
 
 ---
 
-## 3. Database Entity Relationship (ER) Diagram
+## 👥 2. User Roles & Workspace Personas
 
-The system maps data objects across two collections (`users` and `submissions`). The database schema, fields, types, and constraints are defined below:
+MasterLearning tailors views dynamically depending on who logs in:
+
+1. **🎓 Student Workspace**
+   * **Dashboard**: Displays live statistical aggregates (tests completed, average scores) compiled dynamically from database submissions.
+   * **Course Catalogue**: Browsable syllabus list. Clicking cards opens detailed topic modals, download links for worksheets, and lesson entryways.
+   * **Assessment Taker**: Timed quiz module with active countdown timers and answers verification.
+   * **Webinar Lounge**: Live webinar emulator with active group chat feeds.
+
+2. **👩‍🏫 Teacher Workspace**
+   * **Interactive Quiz Creator**: Lets teachers design new assessments, set correct options indices, and publish them instantly.
+   * **Submissions Audit Table**: Clean list showing student quiz submissions, test dates, and scores with email receipt actions.
+   * **Media Manager**: Allows teachers to upload recorded lecture streams or PDF handouts.
+
+3. **🛠️ Administrator Workspace**
+   * **User Registry Directory**: A dashboard showing all registered accounts. Admins can inline edit names, roles, or delete users instantly.
+   * **Database Seeding Tool**: A recovery utility that initializes default courses, quizzes, and simulated scores with one click.
+
+---
+
+## 📊 3. Database Entity Relationship (ER) Diagram
+
+The system operates across six primary Firestore collections. The relationships, primary/foreign keys, and data scopes are defined below:
 
 ```mermaid
 erDiagram
     USERS {
-        string email PK "Normalized lowercase user email, primary key"
-        string name "User full name (minimum 2 characters)"
-        string role "System workspace role: admin | teacher | student"
-        string password "Hashed or plain password string (minimum 6 characters)"
+        string email PK "User identifier (normalized lowercase)"
+        string name "User full name"
+        string role "System role: admin | teacher | student"
+        string password "Encrypted password string"
+        string photoURL "Optional profile image URL link"
     }
-    
+
+    COURSES {
+        string id PK "Course identifier (e.g. math-11)"
+        string title "Course name"
+        string description "Course syllabus summary"
+        string grade "Academic grade tier"
+        int lessonsCount "Total lessons in course"
+        int quizzesCount "Total quizzes in course"
+        int progress "Student completion progress"
+        string iconType "UI icon type indicator"
+    }
+
+    QUIZZES {
+        string id PK "Quiz reference ID"
+        string subject "Syllabus subject category"
+        string title "Test assessment name"
+        int duration "Time limit in minutes"
+        boolean published "Availability state flag"
+        array questions "List of question objects"
+    }
+
     SUBMISSIONS {
-        string id PK "System generated submission ID (timestamp_email)"
+        string id PK "Unique timestamp submission key"
+        string email FK "References USERS.email"
+        string quizId FK "References QUIZZES.id"
         string name "Student profile display name"
-        string email FK "References USERS.email for authorization"
-        string quizId "Reference identifier for completed test sheets"
-        string subject "Syllabus title and metadata"
-        string score "Formatted percentage string (e.g., 90%)"
-        string date "Chronological compilation timestamp (YYYY-MM-DD HH:MM)"
+        string subject "Syllabus title reference"
+        string score "Formatted percentage (e.g., 90%)"
+        string date "Timestamp string (YYYY-MM-DD HH:MM)"
         string status "Workflow status: Approved | Pending"
     }
 
+    LIVE_CLASSES {
+        string id PK "Live class ID"
+        string title "Webinar lecture topic"
+        string teacher "Host instructor name"
+        string time "Scheduled date text"
+        string duration "Class length details"
+    }
+
+    RECORDED_LESSONS {
+        string id PK "Recorded lesson ID"
+        string title "Video lesson title"
+        string category "Subject theme"
+        string views "Simulated view counts"
+        string time "Upload relative age indicator"
+    }
+
     USERS ||--o{ SUBMISSIONS : "completes"
+    USERS ||--o{ COURSES : "teaches"
+    COURSES ||--o{ QUIZZES : "contains"
+    QUIZZES ||--o{ SUBMISSIONS : "logs"
+    COURSES ||--o{ RECORDED_LESSONS : "has"
+    COURSES ||--o{ LIVE_CLASSES : "schedules"
 ```
 
 ---
 
-## 4. Functional Specification
+## 🛠️ 4. Local Installation & Setup Guide
 
-### 4.1 Role-Based User Workspaces
+### 4.1 Prerequisites
+Ensure you have [Node.js v20+](https://nodejs.org/) and [Git](https://git-scm.com/) installed on your machine.
 
-#### 4.1.1 Student Workspace
-* **Welcome Banner**: Displays dynamic calculated student stats: *Quizzes Finished* and *Average Grade* compiled in real-time from matching database submission records.
-* **Classroom Tasks Sidebar**: Clickable indicator shortcuts pointing to `/quiz` and `/classroom` views.
-* **Profile Summary Card**: Reads the local storage session to display correct student names and compute two-character initials (e.g., `KA` for `Kavishka Aswaththa`).
-* **Syllabus Viewer**: Clicking any subject card opens a modal overlay showing topics progress, lessons remaining, and launch pathways to live lectures, recaps, and test papers.
+### 4.2 Installation Steps
 
-#### 4.1.2 Teacher Workspace
-* **Metrics Board**: Summarizes active classrooms count, student registrations, and quiz evaluations.
-* **Assessment Records Table**: Provides search, status filtering, and sorting parameters. Offers a quick action dropdown to copy grade details, send email receipts, or audit answer sheets.
-* **Creator Panel**: Interactive module enabling teachers to compile and publish new quiz questionnaires or upload lecture recordings.
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/your-repo/MasterLearning.git
+   cd MasterLearning
+   ```
 
-#### 4.1.3 Administrator Workspace
-* **Registry Directory**: Master list showing all students and teachers.
-* **User Control Options**: Quick actions to copy registry emails, run credentials validation checks, edit full names/roles, or delete users.
-* **Database Backup Utility**: Simulated system backup triggers and CSV logs exporter.
+2. **Configure Environment Keys**:
+   Copy the sample environment template file:
+   ```bash
+   cp .env.sample .env.local
+   ```
+   Open `.env.local` and paste your Firebase Web App configuration API keys.
 
----
+3. **Install Dependencies**:
+   ```bash
+   npm install
+   ```
 
-## 5. Security & Validation Parameters
+4. **Initialize & Seed the Database**:
+   Populate Firestore collections with baseline courses, quizzes, and test users:
+   ```bash
+   node --env-file=.env.local scripts/seed.js
+   ```
 
-### 5.1 Route Guards
-The authentication layout includes client-side router guards:
-* Accessing `/dashboard`, `/users`, `/profile`, `/quiz`, `/classroom`, or `/settings` requires a valid authenticated user object stored in `localStorage` (`user`).
-* Unauthorized guest visits are redirected back to `/login` with an `auth_required` error parameter, which prompts a warning toast.
-* Role-specific screens (e.g., `/users` registry list) restrict access to `admin` accounts; non-admin users are automatically sent back to the main `/dashboard`.
+5. **Start Dev Server**:
+   ```bash
+   npm run dev
+   ```
+   Open your browser and navigate to `http://localhost:3000` to interact with the platform.
 
-### 5.2 Input Valdation Logic
-To prevent corrupt data entries or statistical calculations failures, strict validation filters apply on all form handlers:
-* **Email Address**: Validated for structural correctness (presence of `@` and `.` characters).
-* **Full Name**: Checked for a minimum length of 2 characters.
-* **Password**: Regulated to require at least 6 characters.
-* **Quiz Title / Class Name**: Required to contain at least 3 characters.
-* **Quiz Scores**: Parsed dynamically through a robust converter that extracts integer values from fraction strings (`"8/10"` -> `80%`) or percentage strings (`"90%"` -> `90%`), protecting dashboard average calculations.
-
----
-
-## 6. Installation & Operational Guide
-
-### 6.1 Setup Credentials
-Duplicate the sample environment configurations template into a local file:
-```bash
-cp .env.sample .env.local
-```
-Fill in your Firebase web app keys in the `.env.local` file.
-
-### 6.2 Install Dependencies
-Install dependencies:
-```bash
-npm install
-```
-
-### 6.3 Run Database Seeder
-To initialize user directories and past submission stats inside Firestore and local fallback files, execute the seed utility script:
-```bash
-node --env-file=.env.local scripts/seed.js
-```
-
-### 6.4 Compile & Run Development Server
-Run Turbopack locally:
-```bash
-npm run dev
-```
-
-Build optimization bundles or check TypeScript clean compilation:
-```bash
-npm run build
-npm run lint
-```
+6. **Build for Production**:
+   Compile Next.js into static static assets:
+   ```bash
+   npm run build
+   ```
+   The compiled assets will be placed in the `/out` directory.
 
 ---
 
-## 7. Default Seed Credentials
+## 🚀 5. Automated CI/CD Deployment Workflow
 
-Use these seeded test accounts to sign in to the platform:
+Every push to the `main` or `master` branch triggers our GitHub Actions pipeline (`.github/workflows/main.yml`) to automatically compile and deploy the application:
+
+```mermaid
+graph TD
+    Push[Git Push to main/master] --> Checkout[Checkout Code]
+    Checkout --> SetupNode[Setup Node.js 20]
+    SetupNode --> InstallDeps[Install NPM Dependencies]
+    InstallDeps --> BuildApp[Compile static pages: npm run build]
+    BuildApp --> DeployFirebase[Deploy /out folder to Firebase Hosting]
+```
+
+### Setting up CI/CD Secrets:
+1. Generate a Service Account JSON key from your GCP Credentials portal.
+2. In your GitHub Repository settings, navigate to *Secrets and Variables -> Actions*.
+3. Add a secret named `FIREBASE_SERVICE_ACCOUNT_MASTERLEARNING_224BD` and paste the entire JSON key payload.
+4. Add secrets matching your `.env.local` variables (`NEXT_PUBLIC_FIREBASE_API_KEY`, etc.) so the automated build runner can pre-render static queries successfully.
+
+---
+
+## 📦 6. Docker Virtualization
+
+You can run the entire static application in a lightweight container using our multi-stage `Dockerfile`:
+
+```bash
+# Build the container image
+docker build -t masterlearning .
+
+# Start Nginx server container on local port 80
+docker run -p 80:80 masterlearning
+```
+
+---
+
+## 🔑 7. Default Login Credentials
+
+Use these seeded test accounts to sign in and test the different roles on the platform:
 
 | Role | Email | Password |
 |---|---|---|
 | **Administrator** | `admin@masterlearning.com` | `password123` |
 | **Teacher** | `teacher@masterlearning.com` | `password123` |
 | **Student** | `student@masterlearning.com` | `password123` |
+
+---
+
+Made with ❤️ by the Faculty of Computer Science and Engineering.

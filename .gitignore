@@ -44,6 +44,7 @@ next-env.d.ts
 # academic files
 project_guidelines.md
 report.md
+report.tex
 
 # agent files
 AGENTS.md
